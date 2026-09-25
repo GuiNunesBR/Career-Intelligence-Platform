@@ -1,5 +1,4 @@
-import { automationRepository } from '../repositories/automation.repository.js';
-import { queueService } from '../services/queue.service.js';
+import { automationRepository, queueService } from '../container.js';
 import { calculateNextRun } from '../services/automation.service.js';
 
 export class AutomationScheduler {
@@ -33,7 +32,7 @@ export class AutomationScheduler {
     this.isChecking = true;
 
     try {
-      const activeAutomations = automationRepository.getAllActiveAutomations();
+      const activeAutomations = await automationRepository.getAllActiveAutomations();
       const now = new Date();
 
       for (const auto of activeAutomations) {
@@ -46,7 +45,7 @@ export class AutomationScheduler {
           const idempotencyKey = `${auto.userId}:${auto.id}:${executionWindow}`;
 
           // Enqueue job with deterministic idempotencyKey
-          queueService.enqueueJob(
+          await queueService.enqueueJob(
             auto.userId,
             auto.type as any,
             { automationId: auto.id, automated: true },
@@ -58,7 +57,7 @@ export class AutomationScheduler {
           auto.lastRunAt = now.toISOString();
           auto.nextRunAt = calculateNextRun(auto.schedule, now);
           auto.updatedAt = now.toISOString();
-          automationRepository.saveAutomation(auto.userId, auto);
+          await automationRepository.saveAutomation(auto.userId, auto);
         }
       }
     } catch (err) {

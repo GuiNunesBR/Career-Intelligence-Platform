@@ -3,25 +3,25 @@ import { UserAutomation } from '../../src/shared/types.js';
 import { IAutomationRepository } from './interfaces.js';
 
 export class AutomationRepository implements IAutomationRepository {
-  getAutomations(userId: string): UserAutomation[] {
+  async getAutomations(userId: string): Promise<UserAutomation[]> {
     return db.getAutomations(userId);
   }
 
-  getAutomationById(userId: string, id: string): UserAutomation | null {
+  async getAutomationById(userId: string, id: string): Promise<UserAutomation | null> {
     return db.getAutomationById(userId, id);
   }
 
-  saveAutomation(userId: string, automation: UserAutomation): UserAutomation {
+  async saveAutomation(userId: string, automation: UserAutomation): Promise<UserAutomation> {
     const scopedAutomation = { ...automation, userId };
     db.saveAutomation(userId, scopedAutomation);
     return scopedAutomation;
   }
 
-  deleteAutomation(userId: string, id: string): boolean {
+  async deleteAutomation(userId: string, id: string): Promise<boolean> {
     return db.deleteAutomation(userId, id);
   }
 
-  getAllActiveAutomations(): UserAutomation[] {
+  async getAllActiveAutomations(): Promise<UserAutomation[]> {
     return db.getAllActiveAutomations();
   }
 }

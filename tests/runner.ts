@@ -4,6 +4,7 @@ import { runAIValidationTests } from './ai_validation.test.js';
 import { runQueueTests } from './queue.test.js';
 import { runAutomationTests } from './automation.test.js';
 import { runIntegrationIsolationTest } from './integration_isolation.test.js';
+import { runDatabasePhase2Tests } from './database_phase2.test.js';
 
 async function main() {
   console.log('====================================================');
@@ -21,6 +22,7 @@ async function main() {
     { name: '4. Job Queue & Deterministic Idempotency', fn: runQueueTests },
     { name: '5. UserAutomations & Timezone Scheduling', fn: runAutomationTests },
     { name: '6. End-to-End Cross-User Isolation (User A vs User B)', fn: runIntegrationIsolationTest },
+    { name: '7. Phase 2 Database Integration Tests', fn: runDatabasePhase2Tests },
   ];
 
   for (const suite of suites) {

@@ -1,33 +1,33 @@
-import { jobQueueRepository, JobQueueRepository } from '../repositories/queue.repository.js';
+import { IJobQueueRepository } from '../repositories/interfaces.js';
 import { BackgroundJob, BackgroundJobType } from '../../src/shared/types.js';
 
 export class QueueService {
-  constructor(private queueRepo: JobQueueRepository = jobQueueRepository) {}
+  constructor(private queueRepo: IJobQueueRepository) {}
 
-  getJobs(userId: string): BackgroundJob[] {
+  async getJobs(userId: string): Promise<BackgroundJob[]> {
     if (!userId) throw new Error('User ID is required');
     return this.queueRepo.getBackgroundJobs(userId);
   }
 
-  getJobById(userId: string, id: string): BackgroundJob | null {
+  async getJobById(userId: string, id: string): Promise<BackgroundJob | null> {
     if (!userId) throw new Error('User ID is required');
     return this.queueRepo.getJobById(userId, id);
   }
 
-  enqueueJob(
+  async enqueueJob(
     userId: string,
     jobType: BackgroundJobType,
     payload?: any,
     scheduledAt?: string,
     customIdempotencyKey?: string
-  ): BackgroundJob {
+  ): Promise<BackgroundJob> {
     if (!userId) throw new Error('User ID is required');
 
     // Deterministic Idempotency Key
     const executionWindow = new Date().toISOString().slice(0, 13);
     const idempotencyKey = customIdempotencyKey || `${userId}:${jobType}:${executionWindow}`;
 
-    const userJobs = this.queueRepo.getBackgroundJobs(userId);
+    const userJobs = await this.queueRepo.getBackgroundJobs(userId);
     const existing = userJobs.find(
       (j) =>
         j.idempotencyKey === idempotencyKey &&
@@ -59,18 +59,18 @@ export class QueueService {
     return this.queueRepo.saveBackgroundJob(userId, job);
   }
 
-  cancelJob(userId: string, id: string): BackgroundJob {
+  async cancelJob(userId: string, id: string): Promise<BackgroundJob> {
     if (!userId) throw new Error('User ID is required');
-    const cancelled = this.queueRepo.cancelJob(userId, id);
+    const cancelled = await this.queueRepo.cancelJob(userId, id);
     if (!cancelled) {
       throw new Error(`Job not found or unauthorized: ${id}`);
     }
     return cancelled;
   }
 
-  retryJob(userId: string, id: string): BackgroundJob {
+  async retryJob(userId: string, id: string): Promise<BackgroundJob> {
     if (!userId) throw new Error('User ID is required');
-    const job = this.queueRepo.getJobById(userId, id);
+    const job = await this.queueRepo.getJobById(userId, id);
     if (!job) {
       throw new Error(`Job not found or unauthorized: ${id}`);
     }
@@ -85,5 +85,3 @@ export class QueueService {
     return this.queueRepo.saveBackgroundJob(userId, job);
   }
 }
-
-export const queueService = new QueueService();

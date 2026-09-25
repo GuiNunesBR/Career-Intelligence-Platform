@@ -3,30 +3,30 @@ import { TailoredCV, CoverLetter } from '../../src/shared/types.js';
 import { ITailoringRepository } from './interfaces.js';
 
 export class TailoringRepository implements ITailoringRepository {
-  getTailoredCVs(userId: string): TailoredCV[] {
+  async getTailoredCVs(userId: string): Promise<TailoredCV[]> {
     return db.getCVs(userId);
   }
 
-  getTailoredCVForJob(userId: string, jobId: string): TailoredCV | null {
+  async getTailoredCVForJob(userId: string, jobId: string): Promise<TailoredCV | null> {
     return db.getCVByJobId(userId, jobId);
   }
 
-  saveTailoredCV(userId: string, cv: TailoredCV): TailoredCV {
+  async saveTailoredCV(userId: string, cv: TailoredCV): Promise<TailoredCV> {
     const scopedCV = { ...cv, userId };
     db.saveCV(userId, scopedCV);
     return scopedCV;
   }
 
-  getCoverLetters(userId: string): CoverLetter[] {
+  async getCoverLetters(userId: string): Promise<CoverLetter[]> {
     return db.getCoverLetters(userId);
   }
 
-  getCoverLetterForJob(userId: string, jobId: string): CoverLetter | null {
+  async getCoverLetterForJob(userId: string, jobId: string): Promise<CoverLetter | null> {
     const letters = db.getCoverLetters(userId);
     return letters.find((l) => l.jobId === jobId && l.userId === userId) || null;
   }
 
-  saveCoverLetter(userId: string, letter: CoverLetter): CoverLetter {
+  async saveCoverLetter(userId: string, letter: CoverLetter): Promise<CoverLetter> {
     const scopedLetter = { ...letter, userId };
     db.saveCoverLetter(userId, scopedLetter);
     return scopedLetter;

@@ -1,20 +1,20 @@
-import { jobRepository, JobRepository } from '../repositories/job.repository.js';
+import { IJobRepository } from '../repositories/interfaces.js';
 import { Job } from '../../src/shared/types.js';
 
 export class JobService {
-  constructor(private jobRepo: JobRepository = jobRepository) {}
+  constructor(private jobRepo: IJobRepository) {}
 
-  getJobs(userId: string): Job[] {
+  async getJobs(userId: string): Promise<Job[]> {
     if (!userId) throw new Error('User ID is required');
     return this.jobRepo.getJobs(userId);
   }
 
-  getJobById(userId: string, jobId: string): Job | null {
+  async getJobById(userId: string, jobId: string): Promise<Job | null> {
     if (!userId) throw new Error('User ID is required');
     return this.jobRepo.getJobById(userId, jobId);
   }
 
-  createJob(userId: string, jobData: Omit<Job, 'id' | 'userId' | 'createdAt' | 'updatedAt'> & { id?: string }): Job {
+  async createJob(userId: string, jobData: Omit<Job, 'id' | 'userId' | 'createdAt' | 'updatedAt'> & { id?: string }): Promise<Job> {
     if (!userId) throw new Error('User ID is required');
     const now = new Date().toISOString();
     const newJob: Job = {
@@ -27,10 +27,8 @@ export class JobService {
     return this.jobRepo.saveJob(userId, newJob);
   }
 
-  deleteJob(userId: string, jobId: string): boolean {
+  async deleteJob(userId: string, jobId: string): Promise<boolean> {
     if (!userId) throw new Error('User ID is required');
     return this.jobRepo.deleteJob(userId, jobId);
   }
 }
-
-export const jobService = new JobService();

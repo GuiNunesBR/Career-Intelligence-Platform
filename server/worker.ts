@@ -1,8 +1,10 @@
-import { jobQueueRepository } from './repositories/queue.repository.js';
-import { careerLakeRepository } from './repositories/lake.repository.js';
-import { jobRepository } from './repositories/job.repository.js';
-import { analysisRepository } from './repositories/analysis.repository.js';
-import { aiService } from './services/ai.service.js';
+import {
+  jobQueueRepository,
+  careerLakeRepository,
+  jobRepository,
+  analysisRepository,
+  aiService
+} from './container.js';
 import { BackgroundJob } from '../src/shared/types.js';
 
 const MAX_RETRIES = 3;
@@ -38,7 +40,7 @@ export class BackgroundWorker {
     this.isProcessing = true;
 
     try {
-      const allPending = jobQueueRepository.getAllPendingJobs();
+      const allPending = await jobQueueRepository.getAllPendingJobs();
       const readyJobs = allPending.filter(
         (j) =>
           (j.status === 'queued' || j.status === 'pending') &&
@@ -61,21 +63,21 @@ export class BackgroundWorker {
     job.startedAt = new Date().toISOString();
     job.progress = 10;
     job.logs.push(`[${new Date().toISOString()}] Worker assigned job. Target user scope: ${userId}`);
-    jobQueueRepository.saveBackgroundJob(userId, job);
+    await jobQueueRepository.saveBackgroundJob(userId, job);
 
     try {
-      const lake = careerLakeRepository.getUserLake(userId);
+      const lake = await careerLakeRepository.getUserLake(userId);
 
       if (job.jobType === 'nightly_analysis' || job.jobType === 'batch_job_refresh') {
-        const jobs = jobRepository.getJobs(userId);
+        const jobs = await jobRepository.getJobs(userId);
         job.logs.push(`[${new Date().toISOString()}] Processing batch re-analysis for ${jobs.length} jobs.`);
         job.progress = 30;
-        jobQueueRepository.saveBackgroundJob(userId, job);
+        await jobQueueRepository.saveBackgroundJob(userId, job);
 
         let analyzedCount = 0;
         for (const j of jobs) {
           const analysisData = await aiService.analyzeFit(lake, j);
-          analysisRepository.saveAnalysis(userId, {
+          await analysisRepository.saveAnalysis(userId, {
             ...analysisData,
             id: `fit_${Date.now()}_${j.id}`,
             userId,
@@ -85,7 +87,7 @@ export class BackgroundWorker {
           analyzedCount++;
           job.progress = Math.round(30 + (analyzedCount / Math.max(1, jobs.length)) * 60);
           job.logs.push(`[${new Date().toISOString()}] Re-analyzed fit for: "${j.title}" at ${j.company}`);
-          jobQueueRepository.saveBackgroundJob(userId, job);
+          await jobQueueRepository.saveBackgroundJob(userId, job);
         }
 
         job.status = 'completed';
@@ -93,11 +95,11 @@ export class BackgroundWorker {
         job.finishedAt = new Date().toISOString();
         job.result = { jobsProcessed: analyzedCount, status: 'success' };
         job.logs.push(`[${new Date().toISOString()}] Successfully completed batch re-analysis of ${analyzedCount} jobs.`);
-        jobQueueRepository.saveBackgroundJob(userId, job);
+        await jobQueueRepository.saveBackgroundJob(userId, job);
       } else if (job.jobType === 'evidence_audit') {
         job.progress = 40;
         job.logs.push(`[${new Date().toISOString()}] Starting career lake integrity audit.`);
-        jobQueueRepository.saveBackgroundJob(userId, job);
+        await jobQueueRepository.saveBackgroundJob(userId, job);
 
         // Audit evidence integrity
         const totalEvidences = lake.evidences.length;
@@ -119,23 +121,23 @@ export class BackgroundWorker {
           auditHealthScore: Math.round(((verifiedCount + hasMetricsCount) / (totalEvidences * 2 || 1)) * 100),
         };
         job.logs.push(`[${new Date().toISOString()}] Evidence integrity audit completed with health score.`);
-        jobQueueRepository.saveBackgroundJob(userId, job);
+        await jobQueueRepository.saveBackgroundJob(userId, job);
       } else if (job.jobType === 'scheduled_tailor') {
         job.progress = 40;
         job.logs.push(`[${new Date().toISOString()}] Running background CV and profile tailoring task.`);
-        jobQueueRepository.saveBackgroundJob(userId, job);
+        await jobQueueRepository.saveBackgroundJob(userId, job);
 
         job.status = 'completed';
         job.progress = 100;
         job.finishedAt = new Date().toISOString();
         job.result = { tailoredStatus: 'up_to_date' };
         job.logs.push(`[${new Date().toISOString()}] Scheduled tailoring background process completed.`);
-        jobQueueRepository.saveBackgroundJob(userId, job);
+        await jobQueueRepository.saveBackgroundJob(userId, job);
       } else {
         job.status = 'completed';
         job.progress = 100;
         job.finishedAt = new Date().toISOString();
-        jobQueueRepository.saveBackgroundJob(userId, job);
+        await jobQueueRepository.saveBackgroundJob(userId, job);
       }
     } catch (err: any) {
       console.error(`Error processing background job ${job.id}:`, err);
@@ -152,7 +154,7 @@ export class BackgroundWorker {
         job.logs.push(`[${new Date().toISOString()}] Job marked as failed after ${MAX_RETRIES} attempts.`);
       }
 
-      jobQueueRepository.saveBackgroundJob(userId, job);
+      await jobQueueRepository.saveBackgroundJob(userId, job);
     }
   }
 }

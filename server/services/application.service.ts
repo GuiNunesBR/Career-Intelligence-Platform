@@ -1,44 +1,42 @@
-import { applicationRepository, ApplicationRepository } from '../repositories/application.repository.js';
+import { IApplicationRepository } from '../repositories/interfaces.js';
 import { Application, ApplicationStatus } from '../../src/shared/types.js';
 
 export class ApplicationService {
-  constructor(private appRepo: ApplicationRepository = applicationRepository) {}
+  constructor(private appRepo: IApplicationRepository) {}
 
-  getApplications(userId: string): Application[] {
+  async getApplications(userId: string): Promise<Application[]> {
     if (!userId) throw new Error('User ID is required');
     return this.appRepo.getApplications(userId);
   }
 
-  getApplicationById(userId: string, id: string): Application | null {
+  async getApplicationById(userId: string, id: string): Promise<Application | null> {
     if (!userId) throw new Error('User ID is required');
     return this.appRepo.getApplicationById(userId, id);
   }
 
-  createApplication(
+  async createApplication(
     userId: string,
     data: Omit<Application, 'id' | 'userId' | 'createdAt' | 'updatedAt'>
-  ): Application {
+  ): Promise<Application> {
     if (!userId) throw new Error('User ID is required');
     return this.appRepo.createApplication(userId, data);
   }
 
-  updateApplicationStatus(userId: string, id: string, status: ApplicationStatus): Application {
+  async updateApplicationStatus(userId: string, id: string, status: ApplicationStatus): Promise<Application> {
     if (!userId) throw new Error('User ID is required');
-    const updated = this.appRepo.updateApplicationStatus(userId, id, status);
+    const updated = await this.appRepo.updateApplicationStatus(userId, id, status);
     if (!updated) {
       throw new Error(`Application not found or unauthorized: ${id}`);
     }
     return updated;
   }
 
-  deleteApplication(userId: string, id: string): boolean {
+  async deleteApplication(userId: string, id: string): Promise<boolean> {
     if (!userId) throw new Error('User ID is required');
-    const deleted = this.appRepo.deleteApplication(userId, id);
+    const deleted = await this.appRepo.deleteApplication(userId, id);
     if (!deleted) {
       throw new Error(`Application not found or unauthorized: ${id}`);
     }
     return true;
   }
 }
-
-export const applicationService = new ApplicationService();

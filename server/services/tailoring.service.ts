@@ -1,33 +1,30 @@
-import { tailoringRepository, TailoringRepository } from '../repositories/tailoring.repository.js';
-import { jobRepository, JobRepository } from '../repositories/job.repository.js';
-import { careerLakeRepository, CareerLakeRepository } from '../repositories/lake.repository.js';
-import { analysisRepository, AnalysisRepository } from '../repositories/analysis.repository.js';
-import { aiService, AIService } from './ai.service.js';
+import { ITailoringRepository, IJobRepository, ICareerLakeRepository, IAnalysisRepository } from '../repositories/interfaces.js';
+import { AIService } from './ai.service.js';
 import { TailoringCVAIOutputSchema, CoverLetterAIOutputSchema } from '../validation/ai_schemas.js';
 import { TailoredCV, CoverLetter, TailoringMode } from '../../src/shared/types.js';
 
 export class TailoringService {
   constructor(
-    private tailoringRepo: TailoringRepository = tailoringRepository,
-    private jobRepo: JobRepository = jobRepository,
-    private lakeRepo: CareerLakeRepository = careerLakeRepository,
-    private analysisRepo: AnalysisRepository = analysisRepository,
-    private ai: AIService = aiService
+    private tailoringRepo: ITailoringRepository,
+    private jobRepo: IJobRepository,
+    private lakeRepo: ICareerLakeRepository,
+    private analysisRepo: IAnalysisRepository,
+    private ai: AIService
   ) {}
 
-  getTailoredCV(userId: string, jobId: string): TailoredCV | null {
+  async getTailoredCV(userId: string, jobId: string): Promise<TailoredCV | null> {
     if (!userId) throw new Error('User ID is required');
     return this.tailoringRepo.getTailoredCVForJob(userId, jobId);
   }
 
-  getCoverLetter(userId: string, jobId: string): CoverLetter | null {
+  async getCoverLetter(userId: string, jobId: string): Promise<CoverLetter | null> {
     if (!userId) throw new Error('User ID is required');
     return this.tailoringRepo.getCoverLetterForJob(userId, jobId);
   }
 
   async generateTailoredCV(userId: string, jobId: string, mode: TailoringMode): Promise<TailoredCV> {
     if (!userId) throw new Error('User ID is required');
-    const job = this.jobRepo.getJobById(userId, jobId);
+    const job = await this.jobRepo.getJobById(userId, jobId);
     if (!job) {
       throw new Error(`Job not found or access denied: ${jobId}`);
     }
@@ -35,7 +32,7 @@ export class TailoringService {
       throw new Error(`Job access forbidden: job does not belong to authenticated user`);
     }
 
-    const lake = this.lakeRepo.getUserLake(userId);
+    const lake = await this.lakeRepo.getUserLake(userId);
     const rawCvData = await this.ai.tailorCV(lake, job, mode);
 
     // 1. Rigorous AI Output Schema Validation
@@ -95,7 +92,7 @@ export class TailoringService {
 
   async generateCoverLetter(userId: string, jobId: string): Promise<CoverLetter> {
     if (!userId) throw new Error('User ID is required');
-    const job = this.jobRepo.getJobById(userId, jobId);
+    const job = await this.jobRepo.getJobById(userId, jobId);
     if (!job) {
       throw new Error(`Job not found or access denied: ${jobId}`);
     }
@@ -103,7 +100,7 @@ export class TailoringService {
       throw new Error(`Job access forbidden: job does not belong to authenticated user`);
     }
 
-    const lake = this.lakeRepo.getUserLake(userId);
+    const lake = await this.lakeRepo.getUserLake(userId);
     const rawLetterData = await this.ai.generateCoverLetter(lake, job);
 
     // 1. AI Output Schema Validation
@@ -120,5 +117,3 @@ export class TailoringService {
     return this.tailoringRepo.saveCoverLetter(userId, letter);
   }
 }
-
-export const tailoringService = new TailoringService();

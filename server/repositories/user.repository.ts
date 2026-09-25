@@ -3,31 +3,31 @@ import { User, SanitizedUser, AuthSession } from '../../src/shared/types.js';
 import { IUserRepository } from './interfaces.js';
 
 export class UserRepository implements IUserRepository {
-  getAllUsers(): SanitizedUser[] {
+  async getAllUsers(): Promise<SanitizedUser[]> {
     return db.getUsers().map(sanitizeUser);
   }
 
-  getUserById(id: string): User | null {
+  async getUserById(id: string): Promise<User | null> {
     return db.getUserById(id);
   }
 
-  getUserByEmail(email: string): User | null {
+  async getUserByEmail(email: string): Promise<User | null> {
     return db.getUserByEmail(email);
   }
 
-  createUser(email: string, name: string, passwordHash?: string, role?: string): User {
+  async createUser(email: string, name: string, passwordHash?: string, role?: string): Promise<User> {
     return db.createUser(email, name, passwordHash, role || 'Professional');
   }
 
-  createSession(userId: string): AuthSession {
+  async createSession(userId: string): Promise<AuthSession> {
     return db.createSession(userId);
   }
 
-  getSession(token: string): AuthSession | null {
+  async getSession(token: string): Promise<AuthSession | null> {
     return db.getSession(token);
   }
 
-  deleteSession(token: string): void {
+  async deleteSession(token: string): Promise<void> {
     db.revokeSession(token);
   }
 }
