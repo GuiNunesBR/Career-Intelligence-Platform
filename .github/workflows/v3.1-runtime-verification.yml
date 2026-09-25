@@ -1,0 +1,62 @@
+name: V3.1 Runtime Verification
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  runtime-verification:
+    runs-on: ubuntu-latest
+    
+    # PostgreSQL Service Container
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: career_user
+          POSTGRES_PASSWORD: career_password
+          POSTGRES_DB: career_lake_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      # Inject the connection string for Drizzle and tests
+      DATABASE_URL: postgresql://career_user:career_password@localhost:5432/career_lake_test
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run Migrations (Create PostgreSQL Schema)
+        # We execute the actual migration SQL to validate table creation and constraints.
+        # ubuntu-latest runner comes with psql pre-installed.
+        run: PGPASSWORD=career_password psql -h localhost -U career_user -d career_lake_test -f server/db/migrations/0000_phase2_init.sql
+
+      - name: Validate TypeScript Compilation
+        run: npx tsc --noEmit --pretty false
+
+      - name: Run PgRepositories Tests (Tenant Isolation & DB Constraints)
+        run: npx tsx server/repositories/__tests__/pg.repositories.test.ts
+
+      - name: Run Integration Tests (API + PgRepositories + Gate 0)
+        run: npm run test
+
+      - name: Validate Frontend Build
+        # Testing the vite/rolldown build in a clean environment to isolate from local npm bugs
+        run: npm run build

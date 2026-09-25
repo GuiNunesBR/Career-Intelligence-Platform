@@ -5,6 +5,7 @@ import { runQueueTests } from './queue.test.js';
 import { runAutomationTests } from './automation.test.js';
 import { runIntegrationIsolationTest } from './integration_isolation.test.js';
 import { runDatabasePhase2Tests } from './database_phase2.test.js';
+import { runApiIntegrationTests } from './api_integration.test.js';
 
 async function main() {
   console.log('====================================================');
@@ -23,6 +24,7 @@ async function main() {
     { name: '5. UserAutomations & Timezone Scheduling', fn: runAutomationTests },
     { name: '6. End-to-End Cross-User Isolation (User A vs User B)', fn: runIntegrationIsolationTest },
     { name: '7. Phase 2 Database Integration Tests', fn: runDatabasePhase2Tests },
+    { name: '8. HTTP API Integration (End-to-End routes with Postgres)', fn: runApiIntegrationTests },
   ];
 
   for (const suite of suites) {
