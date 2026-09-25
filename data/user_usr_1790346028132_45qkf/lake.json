@@ -1,0 +1,28 @@
+{
+  "profile": {
+    "id": "prof_usr_1790346028132_45qkf",
+    "userId": "usr_1790346028132_45qkf",
+    "headline": "Lead Architect",
+    "summary": "Career history and professional records for Carlos Teste.",
+    "location": "São Paulo, Brazil",
+    "targetRoles": [
+      "Lead Architect"
+    ],
+    "targetIndustries": [
+      "General"
+    ],
+    "languages": [
+      {
+        "language": "Portuguese",
+        "proficiency": "Native"
+      }
+    ],
+    "education": [],
+    "createdAt": "2026-09-25T14:20:28.132Z",
+    "updatedAt": "2026-09-25T14:20:28.132Z"
+  },
+  "experiences": [],
+  "projects": [],
+  "skills": [],
+  "evidences": []
+}

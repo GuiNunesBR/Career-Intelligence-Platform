@@ -1,0 +1,45 @@
+[
+  {
+    "id": "job_alex_industrial_lead",
+    "userId": "usr_alex_costa",
+    "company": "Aura Industrial Tech",
+    "title": "Global Project & Capex Controls Manager",
+    "location": "São Paulo, SP (Hybrid)",
+    "seniority": "Lead / Principal",
+    "employmentType": "Full-time",
+    "description": "Seeking an experienced Project & Capex Controls Manager to lead global manufacturing facility modernizations. Responsible for $50M+ Capex portfolios, Primavera schedule integration, cost engineering, risk registers, and cross-functional C-level steering committees.",
+    "requirements": [
+      {
+        "requirementId": "req_1",
+        "category": "Functional",
+        "description": "Multi-million dollar Capex & Opex budget control and variance analysis",
+        "importance": "critical",
+        "evidenceRequired": "Direct evidence of managing $20M+ project budgets"
+      },
+      {
+        "requirementId": "req_2",
+        "category": "Functional",
+        "description": "Formal risk mitigation frameworks, quantitative risk simulation, and contingency control",
+        "importance": "critical",
+        "evidenceRequired": "Track record in project risk registers and mitigation"
+      },
+      {
+        "requirementId": "req_3",
+        "category": "Stakeholder",
+        "description": "Direct reporting and alignment with C-suite stakeholders (CFO, VP of Operations)",
+        "importance": "high",
+        "evidenceRequired": "Proof of steering committee leadership"
+      },
+      {
+        "requirementId": "req_4",
+        "category": "Tool",
+        "description": "Advanced proficiency in SAP PS/CO and Primavera P6",
+        "importance": "high",
+        "evidenceRequired": "Practical enterprise implementation experience"
+      }
+    ],
+    "rawText": "Seeking an experienced Project & Capex Controls Manager...",
+    "createdAt": "2026-09-25T13:11:14.575Z",
+    "updatedAt": "2026-09-25T13:11:14.575Z"
+  }
+]

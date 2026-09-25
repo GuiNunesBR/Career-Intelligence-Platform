@@ -1,0 +1,17 @@
+[
+  {
+    "id": "auto_usr_mariana_silva_audit",
+    "userId": "usr_mariana_silva",
+    "type": "evidence_audit",
+    "enabled": true,
+    "schedule": {
+      "frequency": "weekly",
+      "dayOfWeek": 0,
+      "time": "23:00",
+      "timezone": "America/New_York"
+    },
+    "nextRunAt": "2026-09-28T14:05:42.485Z",
+    "createdAt": "2026-09-25T14:05:42.485Z",
+    "updatedAt": "2026-09-25T14:05:42.485Z"
+  }
+]
