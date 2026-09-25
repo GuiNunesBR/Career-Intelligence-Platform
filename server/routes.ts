@@ -1,13 +1,15 @@
 import express, { Response, NextFunction } from 'express';
-import { authService } from './services/auth.service.js';
-import { careerLakeService } from './services/lake.service.js';
-import { jobService } from './services/job.service.js';
-import { analysisService } from './services/analysis.service.js';
-import { tailoringService } from './services/tailoring.service.js';
-import { applicationService } from './services/application.service.js';
-import { queueService } from './services/queue.service.js';
-import { automationService } from './services/automation.service.js';
-import { aiService } from './services/ai.service.js';
+import {
+  authService,
+  careerLakeService,
+  jobService,
+  analysisService,
+  tailoringService,
+  applicationService,
+  queueService,
+  automationService,
+  aiService
+} from './container.js';
 import { authMiddleware, AuthenticatedRequest } from './middleware/auth.middleware.js';
 import { validateBody } from './middleware/validation.middleware.js';
 import { authRateLimiter, aiRateLimiter } from './middleware/security.middleware.js';
@@ -37,18 +39,18 @@ export const apiRouter = express.Router();
 // 1. AUTHENTICATION (Zero fallback, Real tokens)
 // ==========================================
 
-apiRouter.get('/auth/users', (_req, res, next) => {
+apiRouter.get('/auth/users', async (_req, res, next) => {
   try {
-    const users = authService.getAllUsers();
+    const users = await authService.getAllUsers();
     res.json({ users });
   } catch (err) {
     next(err);
   }
 });
 
-apiRouter.post('/auth/login', authRateLimiter, validateBody(LoginSchema), (req, res, next) => {
+apiRouter.post('/auth/login', authRateLimiter, validateBody(LoginSchema), async (req, res, next) => {
   try {
-    const result = authService.login(req.body);
+    const result = await authService.login(req.body);
     res.json(result);
   } catch (err: any) {
     res.status(401).json({
@@ -62,10 +64,10 @@ apiRouter.post('/auth/login', authRateLimiter, validateBody(LoginSchema), (req, 
   }
 });
 
-apiRouter.post('/auth/register', authRateLimiter, validateBody(RegisterSchema), (req, res, next) => {
+apiRouter.post('/auth/register', authRateLimiter, validateBody(RegisterSchema), async (req, res, next) => {
   try {
     const { email, name, password, role } = req.body;
-    const result = authService.register(email, name, password, role);
+    const result = await authService.register(email, name, password, role);
     res.json(result);
   } catch (err: any) {
     res.status(409).json({
@@ -83,10 +85,10 @@ apiRouter.get('/auth/me', authMiddleware, (req: AuthenticatedRequest, res) => {
   res.json({ user: req.user });
 });
 
-apiRouter.post('/auth/logout', authMiddleware, (req: AuthenticatedRequest, res) => {
+apiRouter.post('/auth/logout', authMiddleware, async (req: AuthenticatedRequest, res) => {
   const token = req.headers.authorization?.substring(7).trim();
   if (token) {
-    authService.logout(token);
+    await authService.logout(token);
   }
   res.json({ success: true, message: 'Logged out successfully' });
 });
@@ -95,9 +97,9 @@ apiRouter.post('/auth/logout', authMiddleware, (req: AuthenticatedRequest, res) 
 // 2. CAREER LAKE (Ground Truth / Source of Truth)
 // ==========================================
 
-apiRouter.get('/lake', authMiddleware, (req: AuthenticatedRequest, res, next) => {
+apiRouter.get('/lake', authMiddleware, async (req: AuthenticatedRequest, res, next) => {
   try {
-    const lake = careerLakeService.getUserLake(req.user!.id);
+    const lake = await careerLakeService.getUserLake(req.user!.id);
     res.json({ lake });
   } catch (err) {
     next(err);
@@ -108,9 +110,9 @@ apiRouter.put(
   '/lake/profile',
   authMiddleware,
   validateBody(CareerProfileUpdateSchema),
-  (req: AuthenticatedRequest, res, next) => {
+  async (req: AuthenticatedRequest, res, next) => {
     try {
-      const profile = careerLakeService.updateProfile(req.user!.id, req.body);
+      const profile = await careerLakeService.updateProfile(req.user!.id, req.body);
       res.json({ profile });
     } catch (err) {
       next(err);
@@ -122,9 +124,9 @@ apiRouter.post(
   '/lake/experience',
   authMiddleware,
   validateBody(ExperienceCreateSchema),
-  (req: AuthenticatedRequest, res, next) => {
+  async (req: AuthenticatedRequest, res, next) => {
     try {
-      const experience = careerLakeService.addExperience(req.user!.id, req.body);
+      const experience = await careerLakeService.addExperience(req.user!.id, req.body);
       res.json({ experience });
     } catch (err) {
       next(err);
@@ -136,9 +138,9 @@ apiRouter.post(
   '/lake/project',
   authMiddleware,
   validateBody(ProjectCreateSchema),
-  (req: AuthenticatedRequest, res, next) => {
+  async (req: AuthenticatedRequest, res, next) => {
     try {
-      const project = careerLakeService.addProject(req.user!.id, req.body);
+      const project = await careerLakeService.addProject(req.user!.id, req.body);
       res.json({ project });
     } catch (err) {
       next(err);
@@ -150,9 +152,9 @@ apiRouter.post(
   '/lake/skill',
   authMiddleware,
   validateBody(SkillCreateSchema),
-  (req: AuthenticatedRequest, res, next) => {
+  async (req: AuthenticatedRequest, res, next) => {
     try {
-      const skill = careerLakeService.addSkill(req.user!.id, req.body);
+      const skill = await careerLakeService.addSkill(req.user!.id, req.body);
       res.json({ skill });
     } catch (err) {
       next(err);
@@ -164,9 +166,9 @@ apiRouter.post(
   '/lake/evidence',
   authMiddleware,
   validateBody(EvidenceCreateSchema),
-  (req: AuthenticatedRequest, res, next) => {
+  async (req: AuthenticatedRequest, res, next) => {
     try {
-      const evidence = careerLakeService.addEvidence(req.user!.id, req.body);
+      const evidence = await careerLakeService.addEvidence(req.user!.id, req.body);
       res.json({ evidence });
     } catch (err) {
       next(err);
@@ -178,9 +180,9 @@ apiRouter.post(
 // 3. JOBS & PARSING
 // ==========================================
 
-apiRouter.get('/jobs', authMiddleware, (req: AuthenticatedRequest, res, next) => {
+apiRouter.get('/jobs', authMiddleware, async (req: AuthenticatedRequest, res, next) => {
   try {
-    const jobs = jobService.getJobs(req.user!.id);
+    const jobs = await jobService.getJobs(req.user!.id);
     res.json({ jobs });
   } catch (err) {
     next(err);
@@ -205,9 +207,9 @@ apiRouter.post(
   '/jobs',
   authMiddleware,
   validateBody(JobCreateSchema),
-  (req: AuthenticatedRequest, res, next) => {
+  async (req: AuthenticatedRequest, res, next) => {
     try {
-      const job = jobService.createJob(req.user!.id, req.body);
+      const job = await jobService.createJob(req.user!.id, req.body);
       res.json({ job });
     } catch (err) {
       next(err);
@@ -215,9 +217,9 @@ apiRouter.post(
   }
 );
 
-apiRouter.delete('/jobs/:id', authMiddleware, (req: AuthenticatedRequest, res, next) => {
+apiRouter.delete('/jobs/:id', authMiddleware, async (req: AuthenticatedRequest, res, next) => {
   try {
-    const deleted = jobService.deleteJob(req.user!.id, req.params.id);
+    const deleted = await jobService.deleteJob(req.user!.id, req.params.id);
     res.json({ success: deleted });
   } catch (err) {
     next(err);
@@ -243,9 +245,9 @@ apiRouter.post(
   }
 );
 
-apiRouter.get('/analysis/:jobId', authMiddleware, (req: AuthenticatedRequest, res, next) => {
+apiRouter.get('/analysis/:jobId', authMiddleware, async (req: AuthenticatedRequest, res, next) => {
   try {
-    const analysis = analysisService.getAnalysisForJob(req.user!.id, req.params.jobId);
+    const analysis = await analysisService.getAnalysisForJob(req.user!.id, req.params.jobId);
     res.json({ analysis });
   } catch (err) {
     next(err);
@@ -253,9 +255,9 @@ apiRouter.get('/analysis/:jobId', authMiddleware, (req: AuthenticatedRequest, re
 });
 
 // Job-scoped routes: /jobs/:jobId/analysis & /jobs/:jobId/analyze
-apiRouter.get('/jobs/:jobId/analysis', authMiddleware, (req: AuthenticatedRequest, res, next) => {
+apiRouter.get('/jobs/:jobId/analysis', authMiddleware, async (req: AuthenticatedRequest, res, next) => {
   try {
-    const analysis = analysisService.getAnalysisForJob(req.user!.id, req.params.jobId);
+    const analysis = await analysisService.getAnalysisForJob(req.user!.id, req.params.jobId);
     res.json({ analysis });
   } catch (err) {
     next(err);
@@ -289,9 +291,9 @@ apiRouter.post(
   }
 );
 
-apiRouter.get('/tailor/cv/:jobId', authMiddleware, (req: AuthenticatedRequest, res, next) => {
+apiRouter.get('/tailor/cv/:jobId', authMiddleware, async (req: AuthenticatedRequest, res, next) => {
   try {
-    const cv = tailoringService.getTailoredCV(req.user!.id, req.params.jobId);
+    const cv = await tailoringService.getTailoredCV(req.user!.id, req.params.jobId);
     res.json({ cv });
   } catch (err) {
     next(err);
@@ -312,9 +314,9 @@ apiRouter.post(
   }
 );
 
-apiRouter.get('/tailor/cover-letter/:jobId', authMiddleware, (req: AuthenticatedRequest, res, next) => {
+apiRouter.get('/tailor/cover-letter/:jobId', authMiddleware, async (req: AuthenticatedRequest, res, next) => {
   try {
-    const coverLetter = tailoringService.getCoverLetter(req.user!.id, req.params.jobId);
+    const coverLetter = await tailoringService.getCoverLetter(req.user!.id, req.params.jobId);
     res.json({ coverLetter });
   } catch (err) {
     next(err);
@@ -322,9 +324,9 @@ apiRouter.get('/tailor/cover-letter/:jobId', authMiddleware, (req: Authenticated
 });
 
 // Job-scoped routes: /jobs/:jobId/cv & /jobs/:jobId/cover-letter
-apiRouter.get('/jobs/:jobId/cv', authMiddleware, (req: AuthenticatedRequest, res, next) => {
+apiRouter.get('/jobs/:jobId/cv', authMiddleware, async (req: AuthenticatedRequest, res, next) => {
   try {
-    const cv = tailoringService.getTailoredCV(req.user!.id, req.params.jobId);
+    const cv = await tailoringService.getTailoredCV(req.user!.id, req.params.jobId);
     res.json({ cv });
   } catch (err) {
     next(err);
@@ -341,9 +343,9 @@ apiRouter.post('/jobs/:jobId/cv', authMiddleware, async (req: AuthenticatedReque
   }
 });
 
-apiRouter.get('/jobs/:jobId/cover-letter', authMiddleware, (req: AuthenticatedRequest, res, next) => {
+apiRouter.get('/jobs/:jobId/cover-letter', authMiddleware, async (req: AuthenticatedRequest, res, next) => {
   try {
-    const coverLetter = tailoringService.getCoverLetter(req.user!.id, req.params.jobId);
+    const coverLetter = await tailoringService.getCoverLetter(req.user!.id, req.params.jobId);
     res.json({ coverLetter });
   } catch (err) {
     next(err);
@@ -363,9 +365,9 @@ apiRouter.post('/jobs/:jobId/cover-letter', authMiddleware, async (req: Authenti
 // 6. APPLICATION TRACKING
 // ==========================================
 
-apiRouter.get('/applications', authMiddleware, (req: AuthenticatedRequest, res, next) => {
+apiRouter.get('/applications', authMiddleware, async (req: AuthenticatedRequest, res, next) => {
   try {
-    const applications = applicationService.getApplications(req.user!.id);
+    const applications = await applicationService.getApplications(req.user!.id);
     res.json({ applications });
   } catch (err) {
     next(err);
@@ -376,9 +378,9 @@ apiRouter.post(
   '/applications',
   authMiddleware,
   validateBody(ApplicationCreateSchema),
-  (req: AuthenticatedRequest, res, next) => {
+  async (req: AuthenticatedRequest, res, next) => {
     try {
-      const application = applicationService.createApplication(req.user!.id, req.body);
+      const application = await applicationService.createApplication(req.user!.id, req.body);
       res.json({ application });
     } catch (err) {
       next(err);
@@ -386,9 +388,9 @@ apiRouter.post(
   }
 );
 
-const handleStatusUpdate = (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+const handleStatusUpdate = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
   try {
-    const application = applicationService.updateApplicationStatus(
+    const application = await applicationService.updateApplicationStatus(
       req.user!.id,
       req.params.id,
       req.body.status
@@ -413,9 +415,9 @@ apiRouter.patch(
   handleStatusUpdate
 );
 
-apiRouter.delete('/applications/:id', authMiddleware, (req: AuthenticatedRequest, res, next) => {
+apiRouter.delete('/applications/:id', authMiddleware, async (req: AuthenticatedRequest, res, next) => {
   try {
-    const deleted = applicationService.deleteApplication(req.user!.id, req.params.id);
+    const deleted = await applicationService.deleteApplication(req.user!.id, req.params.id);
     res.json({ success: deleted });
   } catch (err) {
     next(err);
@@ -426,18 +428,18 @@ apiRouter.delete('/applications/:id', authMiddleware, (req: AuthenticatedRequest
 // 7. BACKGROUND WORKER & JOB QUEUE
 // ==========================================
 
-const handleGetWorkerJobs = (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+const handleGetWorkerJobs = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
   try {
-    const backgroundJobs = queueService.getJobs(req.user!.id);
+    const backgroundJobs = await queueService.getJobs(req.user!.id);
     res.json({ backgroundJobs });
   } catch (err) {
     next(err);
   }
 };
 
-const handleEnqueueJob = (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+const handleEnqueueJob = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
   try {
-    const job = queueService.enqueueJob(
+    const job = await queueService.enqueueJob(
       req.user!.id,
       req.body.jobType,
       req.body.payload,
@@ -465,18 +467,18 @@ apiRouter.post(
   handleEnqueueJob
 );
 
-apiRouter.post('/worker/cancel/:id', authMiddleware, (req: AuthenticatedRequest, res, next) => {
+apiRouter.post('/worker/cancel/:id', authMiddleware, async (req: AuthenticatedRequest, res, next) => {
   try {
-    const job = queueService.cancelJob(req.user!.id, req.params.id);
+    const job = await queueService.cancelJob(req.user!.id, req.params.id);
     res.json({ job });
   } catch (err) {
     next(err);
   }
 });
 
-apiRouter.post('/worker/retry/:id', authMiddleware, (req: AuthenticatedRequest, res, next) => {
+apiRouter.post('/worker/retry/:id', authMiddleware, async (req: AuthenticatedRequest, res, next) => {
   try {
-    const job = queueService.retryJob(req.user!.id, req.params.id);
+    const job = await queueService.retryJob(req.user!.id, req.params.id);
     res.json({ job });
   } catch (err) {
     next(err);
@@ -487,13 +489,15 @@ apiRouter.post('/worker/retry/:id', authMiddleware, (req: AuthenticatedRequest, 
 // 8. DASHBOARD STATS
 // ==========================================
 
-apiRouter.get('/stats', authMiddleware, (req: AuthenticatedRequest, res, next) => {
+apiRouter.get('/stats', authMiddleware, async (req: AuthenticatedRequest, res, next) => {
   try {
     const userId = req.user!.id;
-    const lake = careerLakeService.getUserLake(userId);
-    const jobs = jobService.getJobs(userId);
-    const apps = applicationService.getApplications(userId);
-    const bgJobs = queueService.getJobs(userId);
+    const [lake, jobs, apps, bgJobs] = await Promise.all([
+      careerLakeService.getUserLake(userId),
+      jobService.getJobs(userId),
+      applicationService.getApplications(userId),
+      queueService.getJobs(userId),
+    ]);
 
     const stats = {
       evidencesCount: lake.evidences.length,
@@ -516,9 +520,9 @@ apiRouter.get('/stats', authMiddleware, (req: AuthenticatedRequest, res, next) =
 // 9. RECURRING AUTOMATIONS (UserAutomation)
 // ==========================================
 
-apiRouter.get('/automations', authMiddleware, (req: AuthenticatedRequest, res, next) => {
+apiRouter.get('/automations', authMiddleware, async (req: AuthenticatedRequest, res, next) => {
   try {
-    const automations = automationService.getAutomations(req.user!.id);
+    const automations = await automationService.getAutomations(req.user!.id);
     res.json({ automations });
   } catch (err) {
     next(err);
@@ -529,9 +533,9 @@ apiRouter.post(
   '/automations',
   authMiddleware,
   validateBody(UserAutomationCreateSchema),
-  (req: AuthenticatedRequest, res, next) => {
+  async (req: AuthenticatedRequest, res, next) => {
     try {
-      const automation = automationService.createAutomation(req.user!.id, req.body);
+      const automation = await automationService.createAutomation(req.user!.id, req.body);
       res.json({ automation });
     } catch (err) {
       next(err);
@@ -543,9 +547,9 @@ apiRouter.put(
   '/automations/:id',
   authMiddleware,
   validateBody(UserAutomationUpdateSchema),
-  (req: AuthenticatedRequest, res, next) => {
+  async (req: AuthenticatedRequest, res, next) => {
     try {
-      const automation = automationService.updateAutomation(req.user!.id, req.params.id, req.body);
+      const automation = await automationService.updateAutomation(req.user!.id, req.params.id, req.body);
       res.json({ automation });
     } catch (err) {
       next(err);
@@ -553,18 +557,18 @@ apiRouter.put(
   }
 );
 
-apiRouter.delete('/automations/:id', authMiddleware, (req: AuthenticatedRequest, res, next) => {
+apiRouter.delete('/automations/:id', authMiddleware, async (req: AuthenticatedRequest, res, next) => {
   try {
-    const deleted = automationService.deleteAutomation(req.user!.id, req.params.id);
+    const deleted = await automationService.deleteAutomation(req.user!.id, req.params.id);
     res.json({ success: deleted });
   } catch (err) {
     next(err);
   }
 });
 
-apiRouter.post('/automations/:id/trigger', authMiddleware, (req: AuthenticatedRequest, res, next) => {
+apiRouter.post('/automations/:id/trigger', authMiddleware, async (req: AuthenticatedRequest, res, next) => {
   try {
-    const automation = automationService.triggerAutomation(req.user!.id, req.params.id);
+    const automation = await automationService.triggerAutomation(req.user!.id, req.params.id);
     res.json({ automation });
   } catch (err) {
     next(err);

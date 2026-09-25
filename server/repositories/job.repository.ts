@@ -3,21 +3,21 @@ import { Job } from '../../src/shared/types.js';
 import { IJobRepository } from './interfaces.js';
 
 export class JobRepository implements IJobRepository {
-  getJobs(userId: string): Job[] {
+  async getJobs(userId: string): Promise<Job[]> {
     return db.getJobs(userId);
   }
 
-  getJobById(userId: string, jobId: string): Job | null {
+  async getJobById(userId: string, jobId: string): Promise<Job | null> {
     const jobs = db.getJobs(userId);
     return jobs.find((j) => j.id === jobId) || null;
   }
 
-  saveJob(userId: string, job: Job): Job {
+  async saveJob(userId: string, job: Job): Promise<Job> {
     db.saveJob(userId, { ...job, userId });
     return job;
   }
 
-  deleteJob(userId: string, jobId: string): boolean {
+  async deleteJob(userId: string, jobId: string): Promise<boolean> {
     return db.deleteJob(userId, jobId);
   }
 }

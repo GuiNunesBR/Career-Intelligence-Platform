@@ -3,18 +3,18 @@ import { Application, ApplicationStatus } from '../../src/shared/types.js';
 import { IApplicationRepository } from './interfaces.js';
 
 export class ApplicationRepository implements IApplicationRepository {
-  getApplications(userId: string): Application[] {
+  async getApplications(userId: string): Promise<Application[]> {
     return db.getApplications(userId);
   }
 
-  getApplicationById(userId: string, id: string): Application | null {
+  async getApplicationById(userId: string, id: string): Promise<Application | null> {
     return db.getApplicationById(userId, id);
   }
 
-  createApplication(
+  async createApplication(
     userId: string,
     appData: Omit<Application, 'id' | 'userId' | 'createdAt' | 'updatedAt'>
-  ): Application {
+  ): Promise<Application> {
     const id = `app_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
     const now = new Date().toISOString();
     const app: Application = {
@@ -28,8 +28,8 @@ export class ApplicationRepository implements IApplicationRepository {
     return app;
   }
 
-  updateApplicationStatus(userId: string, id: string, status: ApplicationStatus): Application | null {
-    const app = this.getApplicationById(userId, id);
+  async updateApplicationStatus(userId: string, id: string, status: ApplicationStatus): Promise<Application | null> {
+    const app = await this.getApplicationById(userId, id);
     if (!app) return null;
 
     const updated: Application = {
@@ -41,7 +41,7 @@ export class ApplicationRepository implements IApplicationRepository {
     return updated;
   }
 
-  deleteApplication(userId: string, id: string): boolean {
+  async deleteApplication(userId: string, id: string): Promise<boolean> {
     return db.deleteApplication(userId, id);
   }
 }

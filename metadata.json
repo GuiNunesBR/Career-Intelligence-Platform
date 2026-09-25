@@ -1,6 +1,1 @@
-{
-  "name": "Career Lake - Career Intelligence Platform",
-  "description": "Evidence-first career intelligence platform: Career Lake repository, deep job fit analysis, evidence matrix, targeted CV & application tailoring, multi-user isolation, and background processing.",
-  "requestFramePermissions": [],
-  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
-}
+{"name":"Career Lake - Career Intelligence Platform","description":"Evidence-first career intelligence platform: Career Lake repository, deep job fit analysis, evidence matrix, targeted CV \u0026 application tailoring, multi-user isolation, and background processing.","requestFramePermissions":[],"majorCapabilities":["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]}

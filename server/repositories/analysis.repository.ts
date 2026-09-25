@@ -3,16 +3,16 @@ import { FitAnalysis } from '../../src/shared/types.js';
 import { IAnalysisRepository } from './interfaces.js';
 
 export class AnalysisRepository implements IAnalysisRepository {
-  getAnalyses(userId: string): FitAnalysis[] {
+  async getAnalyses(userId: string): Promise<FitAnalysis[]> {
     return db.getAnalyses(userId);
   }
 
-  getAnalysisForJob(userId: string, jobId: string): FitAnalysis | null {
+  async getAnalysisForJob(userId: string, jobId: string): Promise<FitAnalysis | null> {
     const list = db.getAnalyses(userId);
     return list.find((a) => a.jobId === jobId) || null;
   }
 
-  saveAnalysis(userId: string, analysis: FitAnalysis): FitAnalysis {
+  async saveAnalysis(userId: string, analysis: FitAnalysis): Promise<FitAnalysis> {
     const scopedAnalysis = { ...analysis, userId };
     db.saveAnalysis(userId, scopedAnalysis);
     return scopedAnalysis;

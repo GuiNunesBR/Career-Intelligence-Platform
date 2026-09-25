@@ -10,50 +10,50 @@ import {
 import { ICareerLakeRepository } from './interfaces.js';
 
 export class CareerLakeRepository implements ICareerLakeRepository {
-  getUserLake(userId: string): UserCareerLake {
+  async getUserLake(userId: string): Promise<UserCareerLake> {
     return db.getUserLake(userId);
   }
 
-  saveUserLake(userId: string, lake: UserCareerLake): void {
+  async saveUserLake(userId: string, lake: UserCareerLake): Promise<void> {
     db.saveUserLake(userId, lake);
   }
 
-  updateProfile(userId: string, updates: Partial<CareerProfile>): CareerProfile {
+  async updateProfile(userId: string, updates: Partial<CareerProfile>): Promise<CareerProfile> {
     return db.updateProfile(userId, updates);
   }
 
-  addExperience(
+  async addExperience(
     userId: string,
     exp: Omit<Experience, 'id' | 'userId' | 'createdAt' | 'updatedAt'>
-  ): Experience {
+  ): Promise<Experience> {
     return db.addExperience(userId, exp);
   }
 
-  addProject(
+  async addProject(
     userId: string,
     proj: Omit<Project, 'id' | 'userId' | 'createdAt' | 'updatedAt'>
-  ): Project {
+  ): Promise<Project> {
     return db.addProject(userId, proj);
   }
 
-  addSkill(userId: string, skill: Omit<Skill, 'id' | 'userId'>): Skill {
+  async addSkill(userId: string, skill: Omit<Skill, 'id' | 'userId'>): Promise<Skill> {
     return db.addSkill(userId, skill);
   }
 
-  addEvidence(
+  async addEvidence(
     userId: string,
     evidence: Omit<Evidence, 'id' | 'userId' | 'createdAt'>
-  ): Evidence {
+  ): Promise<Evidence> {
     return db.addEvidence(userId, evidence);
   }
 
-  getExperienceById(userId: string, id: string): Experience | null {
-    const lake = this.getUserLake(userId);
+  async getExperienceById(userId: string, id: string): Promise<Experience | null> {
+    const lake = await this.getUserLake(userId);
     return lake.experiences.find((e) => e.id === id) || null;
   }
 
-  getProjectById(userId: string, id: string): Project | null {
-    const lake = this.getUserLake(userId);
+  async getProjectById(userId: string, id: string): Promise<Project | null> {
+    const lake = await this.getUserLake(userId);
     return lake.projects.find((p) => p.id === id) || null;
   }
 }

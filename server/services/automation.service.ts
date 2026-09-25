@@ -1,5 +1,5 @@
-import { automationRepository, AutomationRepository } from '../repositories/automation.repository.js';
-import { queueService, QueueService } from './queue.service.js';
+import { IAutomationRepository } from '../repositories/interfaces.js';
+import { QueueService } from './queue.service.js';
 import { UserAutomation, AutomationSchedule, AutomationType } from '../../src/shared/types.js';
 
 export function calculateNextRun(schedule: AutomationSchedule, fromDate: Date = new Date()): string {
@@ -30,28 +30,28 @@ export function calculateNextRun(schedule: AutomationSchedule, fromDate: Date = 
 
 export class AutomationService {
   constructor(
-    private autoRepo: AutomationRepository = automationRepository,
-    private queue: QueueService = queueService
+    private autoRepo: IAutomationRepository,
+    private queue: QueueService
   ) {}
 
-  getAutomations(userId: string): UserAutomation[] {
+  async getAutomations(userId: string): Promise<UserAutomation[]> {
     if (!userId) throw new Error('User ID is required');
     return this.autoRepo.getAutomations(userId);
   }
 
-  getAutomationById(userId: string, id: string): UserAutomation | null {
+  async getAutomationById(userId: string, id: string): Promise<UserAutomation | null> {
     if (!userId) throw new Error('User ID is required');
     return this.autoRepo.getAutomationById(userId, id);
   }
 
-  createAutomation(
+  async createAutomation(
     userId: string,
     data: {
       type: AutomationType;
       enabled?: boolean;
       schedule: AutomationSchedule;
     }
-  ): UserAutomation {
+  ): Promise<UserAutomation> {
     if (!userId) throw new Error('User ID is required');
     const now = new Date().toISOString();
     const nextRunAt = calculateNextRun(data.schedule);
@@ -70,13 +70,13 @@ export class AutomationService {
     return this.autoRepo.saveAutomation(userId, auto);
   }
 
-  updateAutomation(
+  async updateAutomation(
     userId: string,
     id: string,
     updates: Partial<Pick<UserAutomation, 'enabled' | 'schedule'>>
-  ): UserAutomation {
+  ): Promise<UserAutomation> {
     if (!userId) throw new Error('User ID is required');
-    const auto = this.autoRepo.getAutomationById(userId, id);
+    const auto = await this.autoRepo.getAutomationById(userId, id);
     if (!auto) {
       throw new Error(`Automation not found or access denied: ${id}`);
     }
@@ -95,18 +95,18 @@ export class AutomationService {
     return this.autoRepo.saveAutomation(userId, updated);
   }
 
-  deleteAutomation(userId: string, id: string): boolean {
+  async deleteAutomation(userId: string, id: string): Promise<boolean> {
     if (!userId) throw new Error('User ID is required');
-    const auto = this.autoRepo.getAutomationById(userId, id);
+    const auto = await this.autoRepo.getAutomationById(userId, id);
     if (!auto) {
       throw new Error(`Automation not found or access denied: ${id}`);
     }
     return this.autoRepo.deleteAutomation(userId, id);
   }
 
-  triggerAutomation(userId: string, id: string): UserAutomation {
+  async triggerAutomation(userId: string, id: string): Promise<UserAutomation> {
     if (!userId) throw new Error('User ID is required');
-    const auto = this.autoRepo.getAutomationById(userId, id);
+    const auto = await this.autoRepo.getAutomationById(userId, id);
     if (!auto) {
       throw new Error(`Automation not found or access denied: ${id}`);
     }
@@ -115,7 +115,7 @@ export class AutomationService {
     const executionWindow = new Date().toISOString().slice(0, 10);
     const idempotencyKey = `${userId}:${auto.id}:${executionWindow}`;
 
-    this.queue.enqueueJob(userId, auto.type as any, { automationId: auto.id }, undefined, idempotencyKey);
+    await this.queue.enqueueJob(userId, auto.type as any, { automationId: auto.id }, undefined, idempotencyKey);
 
     auto.lastRunAt = new Date().toISOString();
     auto.nextRunAt = calculateNextRun(auto.schedule);
@@ -123,5 +123,3 @@ export class AutomationService {
     return this.autoRepo.saveAutomation(userId, auto);
   }
 }
-
-export const automationService = new AutomationService();
