@@ -72,7 +72,13 @@ export async function runApiIntegrationTests() {
         seniority: 'Mid',
         employmentType: 'full-time',
         description: 'Need a QA',
-        requirements: ['Testing'],
+        requirements: [{
+          requirementId: 'req_1',
+          category: 'Technical',
+          description: 'Testing',
+          importance: 'high',
+          evidenceRequired: 'Unit test examples'
+        }],
         rawText: 'Full job desc'
       })
     });
