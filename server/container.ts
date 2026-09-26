@@ -4,7 +4,7 @@ import { PgJobRepository } from './repositories/pg.job.repository.js';
 import { PgAnalysisRepository } from './repositories/pg.analysis.repository.js';
 import { PgTailoringRepository } from './repositories/pg.tailoring.repository.js';
 import { PgApplicationRepository } from './repositories/pg.application.repository.js';
-import { PgJobQueueRepository } from './repositories/pg.queue.repository.js';
+import { PgQueueRepository } from './repositories/pg.queue.repository.js';
 import { PgAutomationRepository } from './repositories/pg.automation.repository.js';
 
 import { AuthService } from './services/auth.service.js';
@@ -28,7 +28,7 @@ export const jobRepository = new PgJobRepository();
 export const analysisRepository = new PgAnalysisRepository();
 export const tailoringRepository = new PgTailoringRepository();
 export const applicationRepository = new PgApplicationRepository();
-export const jobQueueRepository = new PgJobQueueRepository();
+export const jobQueueRepository = new PgQueueRepository();
 export const automationRepository = new PgAutomationRepository();
 
 // =========================================
@@ -56,7 +56,6 @@ export const tailoringService = new TailoringService(
   tailoringRepository,
   jobRepository,
   careerLakeRepository,
-  analysisRepository,
   aiService
 );
 

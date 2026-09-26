@@ -5,11 +5,7 @@ import { db } from '../db/postgres.js';
 import { userAutomations } from '../db/schema.js';
 
 export class PgAutomationRepository implements IAutomationRepository {
-  getAutomations(userId: string): UserAutomation[] {
-    throw new Error('Not implemented: requires async adaptation');
-  }
-
-  async getAutomationsAsync(userId: string): Promise<UserAutomation[]> {
+  async getAutomations(userId: string): Promise<UserAutomation[]> {
     const result = await db.select().from(userAutomations).where(eq(userAutomations.userId, userId));
     return result.map(a => ({
       ...a,
@@ -22,11 +18,7 @@ export class PgAutomationRepository implements IAutomationRepository {
     }));
   }
 
-  getAutomationById(userId: string, id: string): UserAutomation | null {
-    throw new Error('Not implemented: requires async adaptation');
-  }
-
-  async getAutomationByIdAsync(userId: string, id: string): Promise<UserAutomation | null> {
+  async getAutomationById(userId: string, id: string): Promise<UserAutomation | null> {
     const result = await db.select().from(userAutomations).where(and(eq(userAutomations.userId, userId), eq(userAutomations.id, id))).limit(1);
     if (result.length === 0) return null;
     const a = result[0];
@@ -41,12 +33,8 @@ export class PgAutomationRepository implements IAutomationRepository {
     };
   }
 
-  saveAutomation(userId: string, automation: UserAutomation): UserAutomation {
-    throw new Error('Not implemented: requires async adaptation');
-  }
-
-  async saveAutomationAsync(userId: string, automation: UserAutomation): Promise<UserAutomation> {
-    const existing = await this.getAutomationByIdAsync(userId, automation.id);
+  async saveAutomation(userId: string, automation: UserAutomation): Promise<UserAutomation> {
+    const existing = await this.getAutomationById(userId, automation.id);
     if (existing) {
       const [updated] = await db.update(userAutomations).set({
         type: automation.type,
@@ -89,20 +77,12 @@ export class PgAutomationRepository implements IAutomationRepository {
     }
   }
 
-  deleteAutomation(userId: string, id: string): boolean {
-    throw new Error('Not implemented: requires async adaptation');
-  }
-
-  async deleteAutomationAsync(userId: string, id: string): Promise<boolean> {
+  async deleteAutomation(userId: string, id: string): Promise<boolean> {
     const result = await db.delete(userAutomations).where(and(eq(userAutomations.userId, userId), eq(userAutomations.id, id))).returning({ id: userAutomations.id });
     return result.length > 0;
   }
 
-  getAllActiveAutomations(): UserAutomation[] {
-    throw new Error('Not implemented: requires async adaptation');
-  }
-
-  async getAllActiveAutomationsAsync(): Promise<UserAutomation[]> {
+  async getAllActiveAutomations(): Promise<UserAutomation[]> {
     const result = await db.select().from(userAutomations).where(eq(userAutomations.enabled, true));
     return result.map(a => ({
       ...a,

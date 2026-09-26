@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { Plus } from 'lucide-react';
 
 interface NewUserModalProps {
   isOpen: boolean;

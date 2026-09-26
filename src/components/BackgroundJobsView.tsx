@@ -2,8 +2,6 @@ import React, { useState } from 'react';
 import { BackgroundJob, UserAutomation } from '../shared/types.js';
 import {
   Clock,
-  CheckCircle2,
-  AlertCircle,
   RefreshCw,
   Play,
   Terminal,

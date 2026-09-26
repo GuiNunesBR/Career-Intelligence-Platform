@@ -1,17 +1,9 @@
 import React, { useState } from 'react';
 import { Application, ApplicationStatus } from '../shared/types.js';
 import {
-  Layers,
-  Clock,
-  Briefcase,
-  CheckCircle2,
-  Calendar,
   DollarSign,
-  ChevronRight,
-  Plus,
   Trash2,
-  FileText,
-} from 'lucide-react';
+  } from 'lucide-react';
 
 interface ApplicationsViewProps {
   applications: Application[];

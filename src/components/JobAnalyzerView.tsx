@@ -1,16 +1,9 @@
 import React, { useState } from 'react';
-import { Job, JobRequirement } from '../shared/types.js';
+import { Job, } from '../shared/types.js';
 import {
-  Briefcase,
-  Sparkles,
   ArrowRight,
   Clock,
-  CheckCircle,
-  Layers,
-  FileText,
-  AlertCircle,
-  BookmarkPlus,
-} from 'lucide-react';
+  } from 'lucide-react';
 
 interface JobAnalyzerViewProps {
   onAnalyzeJobText: (text: string) => Promise<Job>;
@@ -101,7 +94,7 @@ export const JobAnalyzerView: React.FC<JobAnalyzerViewProps> = ({
 }) => {
   const [jobText, setJobText] = useState(PRESET_JOBS[0].text);
   const [selectedPreset, setSelectedPreset] = useState(PRESET_JOBS[0].id);
-  const [analyzedJob, setAnalyzedJob] = useState<Job | null>(null);
+  const [_analyzedJob, setAnalyzedJob] = useState<Job | null>(null);
 
   const handleSelectPreset = (preset: typeof PRESET_JOBS[0]) => {
     setSelectedPreset(preset.id);

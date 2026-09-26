@@ -7,18 +7,12 @@ import {
   UserCareerLake,
 } from '../shared/types.js';
 import {
-  FileText,
   ShieldCheck,
-  Sparkles,
   Copy,
   Printer,
   Check,
   RefreshCw,
-  Mail,
-  HelpCircle,
-  AlertCircle,
-  ExternalLink,
-} from 'lucide-react';
+  } from 'lucide-react';
 
 interface TailoringViewProps {
   job: Job;

@@ -139,7 +139,7 @@ export default function App() {
   }, [backgroundJobs]);
 
   // Load all isolated records for the target user
-  const loadUserData = async (userId: string) => {
+  const loadUserData = async (_userId: string) => {
     setIsSyncing(true);
     try {
       const [lakeRes, jobsRes, appsRes, bgRes, autoRes] = await Promise.all([

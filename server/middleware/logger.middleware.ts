@@ -1,4 +1,4 @@
-import { Request, Response, NextFunction } from 'express';
+import { Response, NextFunction } from 'express';
 import { AuthenticatedRequest } from './auth.middleware.js';
 
 export function structuredLogger(req: AuthenticatedRequest, res: Response, next: NextFunction): void {

@@ -5,40 +5,38 @@ import { db } from '../db/postgres.js';
 import { tailoredCvs, coverLetters } from '../db/schema.js';
 
 export class PgTailoringRepository implements ITailoringRepository {
-  getTailoredCVs(userId: string): TailoredCV[] {
-    throw new Error('Not implemented: requires async adaptation');
-  }
-
-  async getTailoredCVsAsync(userId: string): Promise<TailoredCV[]> {
+  async getTailoredCVs(userId: string): Promise<TailoredCV[]> {
     const result = await db.select().from(tailoredCvs).where(eq(tailoredCvs.userId, userId));
     return result.map(c => ({
       ...c,
       mode: c.mode as TailoredCV['mode'],
+      selectedExperiences: c.selectedExperiences as any,
+      selectedSkills: c.selectedSkills as any,
+      selectedProjects: c.selectedProjects as any,
+      atsKeywordsMatched: c.atsKeywordsMatched as string[],
+      honestyAuditNotes: c.honestyAuditNotes as string[],
       createdAt: c.createdAt.toISOString(),
     }));
   }
 
-  getTailoredCVForJob(userId: string, jobId: string): TailoredCV | null {
-    throw new Error('Not implemented: requires async adaptation');
-  }
-
-  async getTailoredCVForJobAsync(userId: string, jobId: string): Promise<TailoredCV | null> {
+  async getTailoredCVForJob(userId: string, jobId: string): Promise<TailoredCV | null> {
     const result = await db.select().from(tailoredCvs).where(and(eq(tailoredCvs.userId, userId), eq(tailoredCvs.jobId, jobId))).limit(1);
     if (result.length === 0) return null;
     const c = result[0];
     return {
       ...c,
       mode: c.mode as TailoredCV['mode'],
+      selectedExperiences: c.selectedExperiences as any,
+      selectedSkills: c.selectedSkills as any,
+      selectedProjects: c.selectedProjects as any,
+      atsKeywordsMatched: c.atsKeywordsMatched as string[],
+      honestyAuditNotes: c.honestyAuditNotes as string[],
       createdAt: c.createdAt.toISOString(),
     };
   }
 
-  saveTailoredCV(userId: string, cv: TailoredCV): TailoredCV {
-    throw new Error('Not implemented: requires async adaptation');
-  }
-
-  async saveTailoredCVAsync(userId: string, cv: TailoredCV): Promise<TailoredCV> {
-    const existing = await this.getTailoredCVForJobAsync(userId, cv.jobId);
+  async saveTailoredCV(userId: string, cv: TailoredCV): Promise<TailoredCV> {
+    const existing = await this.getTailoredCVForJob(userId, cv.jobId);
     if (existing) {
       const [updated] = await db.update(tailoredCvs).set({
         mode: cv.mode,
@@ -54,6 +52,11 @@ export class PgTailoringRepository implements ITailoringRepository {
       return {
         ...updated,
         mode: updated.mode as TailoredCV['mode'],
+        selectedExperiences: updated.selectedExperiences as any,
+        selectedSkills: updated.selectedSkills as any,
+        selectedProjects: updated.selectedProjects as any,
+        atsKeywordsMatched: updated.atsKeywordsMatched as string[],
+        honestyAuditNotes: updated.honestyAuditNotes as string[],
         createdAt: updated.createdAt.toISOString(),
       };
     } else {
@@ -74,43 +77,38 @@ export class PgTailoringRepository implements ITailoringRepository {
       return {
         ...inserted,
         mode: inserted.mode as TailoredCV['mode'],
+        selectedExperiences: inserted.selectedExperiences as any,
+        selectedSkills: inserted.selectedSkills as any,
+        selectedProjects: inserted.selectedProjects as any,
+        atsKeywordsMatched: inserted.atsKeywordsMatched as string[],
+        honestyAuditNotes: inserted.honestyAuditNotes as string[],
         createdAt: inserted.createdAt.toISOString(),
       };
     }
   }
 
-  getCoverLetters(userId: string): CoverLetter[] {
-    throw new Error('Not implemented: requires async adaptation');
-  }
-
-  async getCoverLettersAsync(userId: string): Promise<CoverLetter[]> {
+  async getCoverLetters(userId: string): Promise<CoverLetter[]> {
     const result = await db.select().from(coverLetters).where(eq(coverLetters.userId, userId));
     return result.map(c => ({
       ...c,
+      groundedFacts: c.groundedFacts as string[],
       createdAt: c.createdAt.toISOString(),
     }));
   }
 
-  getCoverLetterForJob(userId: string, jobId: string): CoverLetter | null {
-    throw new Error('Not implemented: requires async adaptation');
-  }
-
-  async getCoverLetterForJobAsync(userId: string, jobId: string): Promise<CoverLetter | null> {
+  async getCoverLetterForJob(userId: string, jobId: string): Promise<CoverLetter | null> {
     const result = await db.select().from(coverLetters).where(and(eq(coverLetters.userId, userId), eq(coverLetters.jobId, jobId))).limit(1);
     if (result.length === 0) return null;
     const c = result[0];
     return {
       ...c,
+      groundedFacts: c.groundedFacts as string[],
       createdAt: c.createdAt.toISOString(),
     };
   }
 
-  saveCoverLetter(userId: string, letter: CoverLetter): CoverLetter {
-    throw new Error('Not implemented: requires async adaptation');
-  }
-
-  async saveCoverLetterAsync(userId: string, letter: CoverLetter): Promise<CoverLetter> {
-    const existing = await this.getCoverLetterForJobAsync(userId, letter.jobId);
+  async saveCoverLetter(userId: string, letter: CoverLetter): Promise<CoverLetter> {
+    const existing = await this.getCoverLetterForJob(userId, letter.jobId);
     if (existing) {
       const [updated] = await db.update(coverLetters).set({
         recipient: letter.recipient,
@@ -121,6 +119,7 @@ export class PgTailoringRepository implements ITailoringRepository {
       
       return {
         ...updated,
+        groundedFacts: updated.groundedFacts as string[],
         createdAt: updated.createdAt.toISOString(),
       };
     } else {
@@ -136,6 +135,7 @@ export class PgTailoringRepository implements ITailoringRepository {
       
       return {
         ...inserted,
+        groundedFacts: inserted.groundedFacts as string[],
         createdAt: inserted.createdAt.toISOString(),
       };
     }

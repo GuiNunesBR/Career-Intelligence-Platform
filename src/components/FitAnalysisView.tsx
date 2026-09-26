@@ -1,13 +1,10 @@
 import React, { useState } from 'react';
 import { Job, FitAnalysis, EvidenceType } from '../shared/types.js';
 import {
-  ShieldCheck,
   CheckCircle2,
   AlertTriangle,
-  HelpCircle,
   ArrowRight,
   TrendingUp,
-  FileText,
   BookmarkPlus,
   RefreshCw,
 } from 'lucide-react';

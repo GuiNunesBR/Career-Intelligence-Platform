@@ -1,7 +1,7 @@
 import bcrypt from 'bcryptjs';
 import { IUserRepository } from '../repositories/interfaces.js';
 import { sanitizeUser } from '../db.js';
-import { User, SanitizedUser, AuthSession } from '../../src/shared/types.js';
+import { SanitizedUser, AuthSession } from '../../src/shared/types.js';
 
 export class AuthService {
   constructor(private userRepo: IUserRepository) {}
