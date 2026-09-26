@@ -192,6 +192,29 @@ CREATE TABLE IF NOT EXISTS "background_jobs" (
 );
 --> statement-breakpoint
 
+CREATE UNIQUE INDEX IF NOT EXISTS "users_email_idx" ON "users" (lower(email));
+--> statement-breakpoint
+ALTER TABLE "sessions" ADD CONSTRAINT "sessions_token_hash_idx" UNIQUE("token_hash");
+--> statement-breakpoint
+ALTER TABLE "career_profiles" ADD CONSTRAINT "career_profiles_user_id_unq" UNIQUE("user_id");
+--> statement-breakpoint
+ALTER TABLE "experiences" ADD CONSTRAINT "experiences_user_id_id_unq" UNIQUE("user_id","id");
+--> statement-breakpoint
+ALTER TABLE "projects" ADD CONSTRAINT "projects_user_id_id_unq" UNIQUE("user_id","id");
+--> statement-breakpoint
+ALTER TABLE "jobs" ADD CONSTRAINT "jobs_user_id_id_unq" UNIQUE("user_id","id");
+--> statement-breakpoint
+ALTER TABLE "fit_analyses" ADD CONSTRAINT "fit_analyses_job_id_unq" UNIQUE("job_id");
+--> statement-breakpoint
+ALTER TABLE "tailored_cvs" ADD CONSTRAINT "tailored_cvs_user_job_mode_unq" UNIQUE("user_id","job_id","mode");
+--> statement-breakpoint
+ALTER TABLE "applications" ADD CONSTRAINT "applications_user_job_unq" UNIQUE("user_id","job_id");
+--> statement-breakpoint
+ALTER TABLE "user_automations" ADD CONSTRAINT "user_automations_user_id_id_unq" UNIQUE("user_id","id");
+--> statement-breakpoint
+CREATE UNIQUE INDEX IF NOT EXISTS "background_jobs_idempotency_idx" ON "background_jobs" ("user_id","idempotency_key") WHERE idempotency_key IS NOT NULL;
+--> statement-breakpoint
+
 DO $$ BEGIN
  ALTER TABLE "sessions" ADD CONSTRAINT "sessions_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE cascade ON UPDATE no action;
 EXCEPTION
@@ -313,26 +336,3 @@ DO $$ BEGIN
 EXCEPTION
  WHEN duplicate_object THEN null;
 END $$;
---> statement-breakpoint
-
-CREATE UNIQUE INDEX IF NOT EXISTS "users_email_idx" ON "users" (lower(email));
---> statement-breakpoint
-ALTER TABLE "sessions" ADD CONSTRAINT "sessions_token_hash_idx" UNIQUE("token_hash");
---> statement-breakpoint
-ALTER TABLE "career_profiles" ADD CONSTRAINT "career_profiles_user_id_unq" UNIQUE("user_id");
---> statement-breakpoint
-ALTER TABLE "experiences" ADD CONSTRAINT "experiences_user_id_id_unq" UNIQUE("user_id","id");
---> statement-breakpoint
-ALTER TABLE "projects" ADD CONSTRAINT "projects_user_id_id_unq" UNIQUE("user_id","id");
---> statement-breakpoint
-ALTER TABLE "jobs" ADD CONSTRAINT "jobs_user_id_id_unq" UNIQUE("user_id","id");
---> statement-breakpoint
-ALTER TABLE "fit_analyses" ADD CONSTRAINT "fit_analyses_job_id_unq" UNIQUE("job_id");
---> statement-breakpoint
-ALTER TABLE "tailored_cvs" ADD CONSTRAINT "tailored_cvs_user_job_mode_unq" UNIQUE("user_id","job_id","mode");
---> statement-breakpoint
-ALTER TABLE "applications" ADD CONSTRAINT "applications_user_job_unq" UNIQUE("user_id","job_id");
---> statement-breakpoint
-ALTER TABLE "user_automations" ADD CONSTRAINT "user_automations_user_id_id_unq" UNIQUE("user_id","id");
---> statement-breakpoint
-CREATE UNIQUE INDEX IF NOT EXISTS "background_jobs_idempotency_idx" ON "background_jobs" ("user_id","idempotency_key") WHERE idempotency_key IS NOT NULL;
