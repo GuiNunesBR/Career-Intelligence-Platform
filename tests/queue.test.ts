@@ -1,6 +1,5 @@
 import assert from 'assert';
-import { queueService } from '../server/services/queue.service.js';
-import { jobQueueRepository } from '../server/repositories/queue.repository.js';
+import { queueService, jobQueueRepository } from '../server/container.js';
 
 export async function runQueueTests(): Promise<void> {
   console.log('  [TEST SUITE] Job Queue Lifecycle & Deterministic Idempotency');
