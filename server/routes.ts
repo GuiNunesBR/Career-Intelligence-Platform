@@ -127,7 +127,7 @@ apiRouter.post(
   async (req: AuthenticatedRequest, res, next) => {
     try {
       const experience = await careerLakeService.addExperience(req.user!.id, req.body);
-      res.json({ experience });
+      res.status(201).json({ experience });
     } catch (err) {
       next(err);
     }
@@ -141,7 +141,7 @@ apiRouter.post(
   async (req: AuthenticatedRequest, res, next) => {
     try {
       const project = await careerLakeService.addProject(req.user!.id, req.body);
-      res.json({ project });
+      res.status(201).json({ project });
     } catch (err) {
       next(err);
     }
@@ -155,7 +155,7 @@ apiRouter.post(
   async (req: AuthenticatedRequest, res, next) => {
     try {
       const skill = await careerLakeService.addSkill(req.user!.id, req.body);
-      res.json({ skill });
+      res.status(201).json({ skill });
     } catch (err) {
       next(err);
     }
@@ -169,7 +169,7 @@ apiRouter.post(
   async (req: AuthenticatedRequest, res, next) => {
     try {
       const evidence = await careerLakeService.addEvidence(req.user!.id, req.body);
-      res.json({ evidence });
+      res.status(201).json({ evidence });
     } catch (err) {
       next(err);
     }
@@ -210,7 +210,7 @@ apiRouter.post(
   async (req: AuthenticatedRequest, res, next) => {
     try {
       const job = await jobService.createJob(req.user!.id, req.body);
-      res.json({ job });
+      res.status(201).json({ job });
     } catch (err) {
       next(err);
     }
