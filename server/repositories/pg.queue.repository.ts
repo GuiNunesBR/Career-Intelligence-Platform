@@ -86,6 +86,10 @@ export class PgQueueRepository implements IJobQueueRepository {
         updatedAt: new Date(),
       }).where(and(eq(backgroundJobs.userId, userId), eq(backgroundJobs.id, job.id))).returning();
       
+      if (!updated) {
+        throw new Error(`Concurrency error: Background job ${job.id} was deleted or unavailable during update.`);
+      }
+
       return {
         ...updated,
         jobType: updated.jobType as BackgroundJobType,
