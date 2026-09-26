@@ -37,8 +37,9 @@ export async function runDatabasePhase2Tests() {
     });
     assert.fail('Should have thrown unique constraint error on email');
   } catch (err: any) {
-    const isDuplicate = err.code === '23505' || (err.message && (err.message.includes('unique constraint') || err.message.includes('duplicate key')));
-    assert.ok(isDuplicate, `Duplicate email should fail. Actual error: ${err.message || err}`);
+    const errorStr = String(err.cause || err.message || err);
+    const isDuplicate = errorStr.includes('unique constraint') || errorStr.includes('duplicate key') || errorStr.includes('users_email_idx') || (err.cause?.code === '23505');
+    assert.ok(isDuplicate, `Duplicate email should fail. Actual error: ${errorStr}`);
   }
 
   // 3. session creation & 4. session expiration/revocation

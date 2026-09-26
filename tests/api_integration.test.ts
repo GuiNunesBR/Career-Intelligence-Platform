@@ -28,8 +28,8 @@ export async function runApiIntegrationTests() {
     });
     assert.strictEqual(regRes.status, 201, 'Registration should return 201');
     const regData = await regRes.json();
-    assert.ok(regData.token, 'Should return auth token');
-    const token = regData.token;
+    assert.ok(regData.session?.token, 'Should return auth token');
+    const token = regData.session.token;
 
     // 2. Career Lake: Get Profile
     console.log('Testing /api/lake (GET)...');
