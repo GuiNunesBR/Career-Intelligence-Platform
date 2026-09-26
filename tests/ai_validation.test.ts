@@ -4,9 +4,7 @@ import {
   JobParsingAIOutputSchema,
   TailoringCVAIOutputSchema,
 } from '../server/validation/ai_schemas.js';
-import { analysisService } from '../server/services/analysis.service.js';
-import { jobService } from '../server/services/job.service.js';
-import { careerLakeService } from '../server/services/lake.service.js';
+import { analysisService, jobService, careerLakeService } from '../server/container.js';
 
 export async function runAIValidationTests(): Promise<void> {
   console.log('  [TEST SUITE] AI Output Validation & Grounding');

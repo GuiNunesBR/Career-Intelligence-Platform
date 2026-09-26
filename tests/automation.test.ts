@@ -1,6 +1,6 @@
 import assert from 'assert';
-import { automationService, calculateNextRun } from '../server/services/automation.service.js';
-import { queueService } from '../server/services/queue.service.js';
+import { calculateNextRun } from '../server/services/automation.service.js';
+import { automationService, queueService } from '../server/container.js';
 
 export async function runAutomationTests(): Promise<void> {
   console.log('  [TEST SUITE] Recurring UserAutomations & Timezone Scheduler');

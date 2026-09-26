@@ -1,8 +1,5 @@
 import assert from 'assert';
-import { careerLakeService } from '../server/services/lake.service.js';
-import { jobService } from '../server/services/job.service.js';
-import { automationService } from '../server/services/automation.service.js';
-import { applicationService } from '../server/services/application.service.js';
+import { careerLakeService, jobService, automationService, applicationService } from '../server/container.js';
 
 export async function runOwnershipTests(): Promise<void> {
   console.log('  [TEST SUITE] Strict Multi-User Ownership & Isolation');
