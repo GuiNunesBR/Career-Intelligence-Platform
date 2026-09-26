@@ -277,6 +277,7 @@ export const backgroundJobs = pgTable('background_jobs', {
   return {
     // NOTE: Manually altered to ON DELETE SET NULL (automation_id) in migration
     autoFk: foreignKey({
+      name: 'background_jobs_automation_fk',
       columns: [table.userId, table.automationId],
       foreignColumns: [userAutomations.userId, userAutomations.id]
     }).onDelete('no action'),
