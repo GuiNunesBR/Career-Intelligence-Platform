@@ -83,7 +83,7 @@ export async function runIntegrationIsolationTest(): Promise<void> {
       rawText: 'Confidential strategy lead job posting with private capex portfolio focus',
     },
   });
-  assert.strictEqual(createJobA.status, 200);
+  assert.strictEqual(createJobA.status, 201);
   const jobAId = createJobA.body.job.id;
 
     // 3. User B Logs In
