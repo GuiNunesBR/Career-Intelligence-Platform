@@ -2,12 +2,12 @@ import fs from 'fs';
 import path from 'path';
 import { db } from './postgres.js';
 import { 
-  users, sessions, careerProfiles, experiences, projects, skills, 
+  users, careerProfiles, experiences, projects, skills, 
   evidences, jobs, fitAnalyses, tailoredCvs, coverLetters, 
   applications, userAutomations, backgroundJobs 
 } from './schema.js';
 import {
-  User, AuthSession, UserCareerLake, Job, FitAnalysis, TailoredCV, CoverLetter,
+  User, UserCareerLake, Job, FitAnalysis, TailoredCV, CoverLetter,
   Application, UserAutomation, BackgroundJob
 } from '../../src/shared/types.js';
 
@@ -36,7 +36,7 @@ export async function runDataMigration(dryRun: boolean = true) {
   const usersPath = path.join(DATA_DIR, 'users.json');
   if (fs.existsSync(usersPath)) {
     const data = JSON.parse(fs.readFileSync(usersPath, 'utf8'));
-    for (const [id, user] of Object.entries(data) as [string, User][]) {
+    for (const [_id, user] of Object.entries(data) as [string, User][]) {
       report.users++;
       if (!dryRun) {
         await db.insert(users).values({

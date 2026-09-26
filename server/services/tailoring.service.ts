@@ -1,4 +1,4 @@
-import { ITailoringRepository, IJobRepository, ICareerLakeRepository, IAnalysisRepository } from '../repositories/interfaces.js';
+import { ITailoringRepository, IJobRepository, ICareerLakeRepository } from '../repositories/interfaces.js';
 import { AIService } from './ai.service.js';
 import { TailoringCVAIOutputSchema, CoverLetterAIOutputSchema } from '../validation/ai_schemas.js';
 import { TailoredCV, CoverLetter, TailoringMode } from '../../src/shared/types.js';
@@ -8,7 +8,6 @@ export class TailoringService {
     private tailoringRepo: ITailoringRepository,
     private jobRepo: IJobRepository,
     private lakeRepo: ICareerLakeRepository,
-    private analysisRepo: IAnalysisRepository,
     private ai: AIService
   ) {}
 

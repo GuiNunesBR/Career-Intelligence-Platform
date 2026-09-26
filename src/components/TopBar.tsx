@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { User } from '../shared/types.js';
-import { Users, ChevronDown, Plus, ShieldCheck, RefreshCw } from 'lucide-react';
+import { ChevronDown, Plus, RefreshCw } from 'lucide-react';
 
 interface TopBarProps {
   currentUser: User | null;

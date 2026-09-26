@@ -12,7 +12,7 @@ import {
 } from './container.js';
 import { authMiddleware, AuthenticatedRequest } from './middleware/auth.middleware.js';
 import { validateBody } from './middleware/validation.middleware.js';
-import { authRateLimiter, aiRateLimiter } from './middleware/security.middleware.js';
+import { authRateLimiter } from './middleware/security.middleware.js';
 import {
   LoginSchema,
   RegisterSchema,
@@ -39,16 +39,16 @@ export const apiRouter = express.Router();
 // 1. AUTHENTICATION (Zero fallback, Real tokens)
 // ==========================================
 
-apiRouter.get('/auth/users', async (_req, res, next) => {
+apiRouter.get('/auth/users', async (_req, res) => {
   try {
     const users = await authService.getAllUsers();
     res.json({ users });
   } catch (err) {
-    next(err);
+    res.status(500).json({ error: String(err) });
   }
 });
 
-apiRouter.post('/auth/login', authRateLimiter, validateBody(LoginSchema), async (req, res, next) => {
+apiRouter.post('/auth/login', authRateLimiter, validateBody(LoginSchema), async (req, res) => {
   try {
     const result = await authService.login(req.body);
     res.json(result);
@@ -64,7 +64,7 @@ apiRouter.post('/auth/login', authRateLimiter, validateBody(LoginSchema), async 
   }
 });
 
-apiRouter.post('/auth/register', authRateLimiter, validateBody(RegisterSchema), async (req, res, next) => {
+apiRouter.post('/auth/register', authRateLimiter, validateBody(RegisterSchema), async (req, res) => {
   try {
     const { email, name, password, role } = req.body;
     const result = await authService.register(email, name, password, role);
@@ -97,12 +97,12 @@ apiRouter.post('/auth/logout', authMiddleware, async (req: AuthenticatedRequest,
 // 2. CAREER LAKE (Ground Truth / Source of Truth)
 // ==========================================
 
-apiRouter.get('/lake', authMiddleware, async (req: AuthenticatedRequest, res, next) => {
+apiRouter.get('/lake', authMiddleware, async (req: AuthenticatedRequest, res) => {
   try {
     const lake = await careerLakeService.getUserLake(req.user!.id);
     res.json({ lake });
   } catch (err) {
-    next(err);
+    res.status(500).json({ error: String(err) });
   }
 });
 

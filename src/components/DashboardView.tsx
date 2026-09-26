@@ -4,13 +4,10 @@ import {
   Database,
   Briefcase,
   Layers,
-  FileCheck,
-  TrendingUp,
   Clock,
   ArrowRight,
   ShieldAlert,
-  Sparkles,
-} from 'lucide-react';
+  } from 'lucide-react';
 
 interface DashboardViewProps {
   user: User;

@@ -5,11 +5,7 @@ import { db } from '../db/postgres.js';
 import { backgroundJobs } from '../db/schema.js';
 
 export class PgQueueRepository implements IJobQueueRepository {
-  getBackgroundJobs(userId: string): BackgroundJob[] {
-    throw new Error('Not implemented: requires async adaptation');
-  }
-
-  async getBackgroundJobsAsync(userId: string): Promise<BackgroundJob[]> {
+  async getBackgroundJobs(userId: string): Promise<BackgroundJob[]> {
     const result = await db.select().from(backgroundJobs).where(eq(backgroundJobs.userId, userId));
     return result.map(j => ({
       ...j,
@@ -22,16 +18,13 @@ export class PgQueueRepository implements IJobQueueRepository {
       finishedAt: j.finishedAt?.toISOString(),
       result: j.result || undefined,
       error: j.error || undefined,
+      logs: j.logs as string[],
       createdAt: j.createdAt.toISOString(),
       updatedAt: j.updatedAt.toISOString(),
     }));
   }
 
-  getJobById(userId: string, id: string): BackgroundJob | null {
-    throw new Error('Not implemented: requires async adaptation');
-  }
-
-  async getJobByIdAsync(userId: string, id: string): Promise<BackgroundJob | null> {
+  async getJobById(userId: string, id: string): Promise<BackgroundJob | null> {
     const result = await db.select().from(backgroundJobs).where(and(eq(backgroundJobs.userId, userId), eq(backgroundJobs.id, id))).limit(1);
     if (result.length === 0) return null;
     const j = result[0];
@@ -46,16 +39,13 @@ export class PgQueueRepository implements IJobQueueRepository {
       finishedAt: j.finishedAt?.toISOString(),
       result: j.result || undefined,
       error: j.error || undefined,
+      logs: j.logs as string[],
       createdAt: j.createdAt.toISOString(),
       updatedAt: j.updatedAt.toISOString(),
     };
   }
 
-  getAllPendingJobs(): BackgroundJob[] {
-    throw new Error('Not implemented: requires async adaptation');
-  }
-
-  async getAllPendingJobsAsync(): Promise<BackgroundJob[]> {
+  async getAllPendingJobs(): Promise<BackgroundJob[]> {
     const result = await db.select().from(backgroundJobs).where(
       or(
         eq(backgroundJobs.status, 'pending'),
@@ -73,17 +63,14 @@ export class PgQueueRepository implements IJobQueueRepository {
       finishedAt: j.finishedAt?.toISOString(),
       result: j.result || undefined,
       error: j.error || undefined,
+      logs: j.logs as string[],
       createdAt: j.createdAt.toISOString(),
       updatedAt: j.updatedAt.toISOString(),
     }));
   }
 
-  saveBackgroundJob(userId: string, job: BackgroundJob): BackgroundJob {
-    throw new Error('Not implemented: requires async adaptation');
-  }
-
-  async saveBackgroundJobAsync(userId: string, job: BackgroundJob): Promise<BackgroundJob> {
-    const existing = await this.getJobByIdAsync(userId, job.id);
+  async saveBackgroundJob(userId: string, job: BackgroundJob): Promise<BackgroundJob> {
+    const existing = await this.getJobById(userId, job.id);
     if (existing) {
       const [updated] = await db.update(backgroundJobs).set({
         status: job.status,
@@ -110,6 +97,7 @@ export class PgQueueRepository implements IJobQueueRepository {
         finishedAt: updated.finishedAt?.toISOString(),
         result: updated.result || undefined,
         error: updated.error || undefined,
+        logs: updated.logs as string[],
         createdAt: updated.createdAt.toISOString(),
         updatedAt: updated.updatedAt.toISOString(),
       };
@@ -144,24 +132,21 @@ export class PgQueueRepository implements IJobQueueRepository {
         finishedAt: inserted.finishedAt?.toISOString(),
         result: inserted.result || undefined,
         error: inserted.error || undefined,
+        logs: inserted.logs as string[],
         createdAt: inserted.createdAt.toISOString(),
         updatedAt: inserted.updatedAt.toISOString(),
       };
     }
   }
 
-  cancelJob(userId: string, id: string): BackgroundJob | null {
-    throw new Error('Not implemented: requires async adaptation');
-  }
-
-  async cancelJobAsync(userId: string, id: string): Promise<BackgroundJob | null> {
-    const existing = await this.getJobByIdAsync(userId, id);
+  async cancelJob(userId: string, id: string): Promise<BackgroundJob | null> {
+    const existing = await this.getJobById(userId, id);
     if (!existing || existing.status === 'completed' || existing.status === 'failed' || existing.status === 'cancelled') {
       return null;
     }
     
     existing.status = 'cancelled';
     existing.finishedAt = new Date().toISOString();
-    return this.saveBackgroundJobAsync(userId, existing);
+    return this.saveBackgroundJob(userId, existing);
   }
 }

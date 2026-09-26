@@ -5,40 +5,30 @@ import { db } from '../db/postgres.js';
 import { jobs } from '../db/schema.js';
 
 export class PgJobRepository implements IJobRepository {
-  getJobs(userId: string): Job[] {
-    throw new Error('Not implemented: requires async adaptation');
-  }
-
-  async getJobsAsync(userId: string): Promise<Job[]> {
+  async getJobs(userId: string): Promise<Job[]> {
     const result = await db.select().from(jobs).where(eq(jobs.userId, userId));
     return result.map(j => ({
       ...j,
+      requirements: j.requirements as any, // Will fix JSONB mapping in next step
       createdAt: j.createdAt.toISOString(),
       updatedAt: j.updatedAt.toISOString(),
     }));
   }
 
-  getJobById(userId: string, jobId: string): Job | null {
-    throw new Error('Not implemented: requires async adaptation');
-  }
-
-  async getJobByIdAsync(userId: string, jobId: string): Promise<Job | null> {
+  async getJobById(userId: string, jobId: string): Promise<Job | null> {
     const result = await db.select().from(jobs).where(and(eq(jobs.userId, userId), eq(jobs.id, jobId))).limit(1);
     if (result.length === 0) return null;
     const j = result[0];
     return {
       ...j,
+      requirements: j.requirements as any,
       createdAt: j.createdAt.toISOString(),
       updatedAt: j.updatedAt.toISOString(),
     };
   }
 
-  saveJob(userId: string, job: Job): Job {
-    throw new Error('Not implemented: requires async adaptation');
-  }
-
-  async saveJobAsync(userId: string, job: Job): Promise<Job> {
-    const existing = await this.getJobByIdAsync(userId, job.id);
+  async saveJob(userId: string, job: Job): Promise<Job> {
+    const existing = await this.getJobById(userId, job.id);
     if (existing) {
       const [updated] = await db.update(jobs).set({
         company: job.company,
@@ -54,6 +44,7 @@ export class PgJobRepository implements IJobRepository {
       
       return {
         ...updated,
+        requirements: updated.requirements as any,
         createdAt: updated.createdAt.toISOString(),
         updatedAt: updated.updatedAt.toISOString(),
       };
@@ -73,17 +64,14 @@ export class PgJobRepository implements IJobRepository {
       
       return {
         ...inserted,
+        requirements: inserted.requirements as any,
         createdAt: inserted.createdAt.toISOString(),
         updatedAt: inserted.updatedAt.toISOString(),
       };
     }
   }
 
-  deleteJob(userId: string, jobId: string): boolean {
-    throw new Error('Not implemented: requires async adaptation');
-  }
-
-  async deleteJobAsync(userId: string, jobId: string): Promise<boolean> {
+  async deleteJob(userId: string, jobId: string): Promise<boolean> {
     const result = await db.delete(jobs).where(and(eq(jobs.userId, userId), eq(jobs.id, jobId))).returning({ id: jobs.id });
     return result.length > 0;
   }

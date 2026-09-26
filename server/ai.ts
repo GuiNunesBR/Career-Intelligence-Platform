@@ -119,7 +119,7 @@ Return clean structured JSON with:
   const company = lines.length > 1 && lines[1].length < 40 ? lines[1] : 'Enterprise Partner';
   
   const extractedReqs: JobRequirement[] = [];
-  const reqKeywords = ['require', 'responsib', 'qualif', 'experien', 'skill', 'must have', 'dever', 'conhecimento'];
+  // const reqKeywords = ['require', 'responsib', 'qualif', 'experien', 'skill', 'must have', 'dever', 'conhecimento'];
   let count = 0;
 
   for (const line of lines) {

@@ -36,13 +36,14 @@ export class PgCareerLakeRepository implements ICareerLakeRepository {
         location: profileData[0].location,
         targetRoles: profileData[0].targetRoles,
         targetIndustries: profileData[0].targetIndustries,
-        languages: profileData[0].languages,
-        education: profileData[0].education,
+        languages: profileData[0].languages as CareerProfile['languages'],
+        education: profileData[0].education as CareerProfile['education'],
         createdAt: profileData[0].createdAt.toISOString(),
         updatedAt: profileData[0].updatedAt.toISOString(),
-      } : null,
+      } as CareerProfile : ({} as CareerProfile),
       experiences: exps.map(e => ({
         ...e,
+        employmentType: e.employmentType as Experience['employmentType'],
         isCurrent: e.isCurrent ?? undefined,
         endDate: e.endDate || undefined,
         createdAt: e.createdAt.toISOString(),
@@ -57,9 +58,13 @@ export class PgCareerLakeRepository implements ICareerLakeRepository {
       })),
       skills: skls.map(s => ({
         ...s,
+        category: s.category as Skill['category'],
+        proficiency: s.proficiency as Skill['proficiency'],
       })),
       evidences: evids.map(e => ({
         ...e,
+        type: e.type as Evidence['type'],
+        confidence: e.confidence as Evidence['confidence'],
         experienceId: e.experienceId || undefined,
         projectId: e.projectId || undefined,
         metric: e.metric || undefined,
@@ -87,21 +92,27 @@ export class PgCareerLakeRepository implements ICareerLakeRepository {
         location: updates.location || '',
         targetRoles: updates.targetRoles || [],
         targetIndustries: updates.targetIndustries || [],
-        languages: updates.languages || [],
-        education: updates.education || [],
+        languages: (updates.languages as any) || [],
+        education: (updates.education as any) || [],
       }).returning();
       return {
         ...inserted,
+        languages: inserted.languages as CareerProfile['languages'],
+        education: inserted.education as CareerProfile['education'],
         createdAt: inserted.createdAt.toISOString(),
         updatedAt: inserted.updatedAt.toISOString(),
       };
     } else {
       const [updated] = await db.update(careerProfiles).set({
         ...updates,
-        updatedAt: new Date(),
+        languages: updates.languages ? (updates.languages as any) : undefined,
+        education: updates.education ? (updates.education as any) : undefined,
+        updatedAt: new Date(), createdAt: undefined as any,
       }).where(eq(careerProfiles.userId, userId)).returning();
       return {
         ...updated,
+        languages: updated.languages as CareerProfile['languages'],
+        education: updated.education as CareerProfile['education'],
         createdAt: updated.createdAt.toISOString(),
         updatedAt: updated.updatedAt.toISOString(),
       };
@@ -125,6 +136,7 @@ export class PgCareerLakeRepository implements ICareerLakeRepository {
     }).returning();
     return {
       ...inserted,
+      employmentType: inserted.employmentType as Experience['employmentType'],
       isCurrent: inserted.isCurrent ?? undefined,
       endDate: inserted.endDate || undefined,
       createdAt: inserted.createdAt.toISOString(),
@@ -164,7 +176,11 @@ export class PgCareerLakeRepository implements ICareerLakeRepository {
       proficiency: skill.proficiency,
       yearsExperience: skill.yearsExperience,
     }).returning();
-    return inserted;
+    return {
+      ...inserted,
+      category: inserted.category as Skill['category'],
+      proficiency: inserted.proficiency as Skill['proficiency'],
+    };
   }
 
   async addEvidence(userId: string, evidence: Omit<Evidence, 'id' | 'userId' | 'createdAt'>): Promise<Evidence> {
@@ -183,6 +199,8 @@ export class PgCareerLakeRepository implements ICareerLakeRepository {
     }).returning();
     return {
       ...inserted,
+      type: inserted.type as Evidence['type'],
+      confidence: inserted.confidence as Evidence['confidence'],
       experienceId: inserted.experienceId || undefined,
       projectId: inserted.projectId || undefined,
       metric: inserted.metric || undefined,
@@ -197,6 +215,7 @@ export class PgCareerLakeRepository implements ICareerLakeRepository {
     const e = result[0];
     return {
       ...e,
+      employmentType: e.employmentType as Experience['employmentType'],
       isCurrent: e.isCurrent ?? undefined,
       endDate: e.endDate || undefined,
       createdAt: e.createdAt.toISOString(),

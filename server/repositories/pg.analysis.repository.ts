@@ -5,38 +5,30 @@ import { db } from '../db/postgres.js';
 import { fitAnalyses } from '../db/schema.js';
 
 export class PgAnalysisRepository implements IAnalysisRepository {
-  getAnalyses(userId: string): FitAnalysis[] {
-    throw new Error('Not implemented: requires async adaptation');
-  }
-
-  async getAnalysesAsync(userId: string): Promise<FitAnalysis[]> {
+  async getAnalyses(userId: string): Promise<FitAnalysis[]> {
     const result = await db.select().from(fitAnalyses).where(eq(fitAnalyses.userId, userId));
     return result.map(a => ({
       ...a,
+      dimensions: a.dimensions as any,
+      evidenceMatrix: a.evidenceMatrix as any,
       createdAt: a.createdAt.toISOString(),
     }));
   }
 
-  getAnalysisForJob(userId: string, jobId: string): FitAnalysis | null {
-    throw new Error('Not implemented: requires async adaptation');
-  }
-
-  async getAnalysisForJobAsync(userId: string, jobId: string): Promise<FitAnalysis | null> {
+  async getAnalysisForJob(userId: string, jobId: string): Promise<FitAnalysis | null> {
     const result = await db.select().from(fitAnalyses).where(and(eq(fitAnalyses.userId, userId), eq(fitAnalyses.jobId, jobId))).limit(1);
     if (result.length === 0) return null;
     const a = result[0];
     return {
       ...a,
+      dimensions: a.dimensions as any,
+      evidenceMatrix: a.evidenceMatrix as any,
       createdAt: a.createdAt.toISOString(),
     };
   }
 
-  saveAnalysis(userId: string, analysis: FitAnalysis): FitAnalysis {
-    throw new Error('Not implemented: requires async adaptation');
-  }
-
-  async saveAnalysisAsync(userId: string, analysis: FitAnalysis): Promise<FitAnalysis> {
-    const existing = await this.getAnalysisForJobAsync(userId, analysis.jobId);
+  async saveAnalysis(userId: string, analysis: FitAnalysis): Promise<FitAnalysis> {
+    const existing = await this.getAnalysisForJob(userId, analysis.jobId);
     if (existing) {
       const [updated] = await db.update(fitAnalyses).set({
         overallSummary: analysis.overallSummary,
@@ -51,6 +43,8 @@ export class PgAnalysisRepository implements IAnalysisRepository {
       
       return {
         ...updated,
+        dimensions: updated.dimensions as any,
+        evidenceMatrix: updated.evidenceMatrix as any,
         createdAt: updated.createdAt.toISOString(),
       };
     } else {
@@ -70,6 +64,8 @@ export class PgAnalysisRepository implements IAnalysisRepository {
       
       return {
         ...inserted,
+        dimensions: inserted.dimensions as any,
+        evidenceMatrix: inserted.evidenceMatrix as any,
         createdAt: inserted.createdAt.toISOString(),
       };
     }

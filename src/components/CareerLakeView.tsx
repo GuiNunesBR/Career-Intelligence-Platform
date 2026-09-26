@@ -12,16 +12,11 @@ import {
   Database,
   Plus,
   Search,
-  Filter,
-  CheckCircle2,
-  AlertCircle,
   FileText,
   Briefcase,
   Layers,
   Award,
-  Sparkles,
-  ExternalLink,
-} from 'lucide-react';
+  } from 'lucide-react';
 
 interface CareerLakeViewProps {
   lake: UserCareerLake;
@@ -35,7 +30,7 @@ interface CareerLakeViewProps {
 export const CareerLakeView: React.FC<CareerLakeViewProps> = ({
   lake,
   onAddExperience,
-  onAddProject,
+  
   onAddSkill,
   onAddEvidence,
   onRunAudit,
@@ -54,7 +49,7 @@ export const CareerLakeView: React.FC<CareerLakeViewProps> = ({
   const [newEvMetric, setNewEvMetric] = useState('');
   const [newEvSource, setNewEvSource] = useState('');
   const [newEvType, setNewEvType] = useState<EvidenceType>('direct');
-  const [newEvConfidence, setNewEvConfidence] = useState<EvidenceConfidence>('high');
+  const [newEvConfidence] = useState<EvidenceConfidence>('high');
   const [newEvDomain, setNewEvDomain] = useState('');
   const [newEvExpId, setNewEvExpId] = useState('');
 
@@ -62,7 +57,7 @@ export const CareerLakeView: React.FC<CareerLakeViewProps> = ({
   const [newExpCompany, setNewExpCompany] = useState('');
   const [newExpTitle, setNewExpTitle] = useState('');
   const [newExpDomain, setNewExpDomain] = useState('');
-  const [newExpLocation, setNewExpLocation] = useState('');
+  const [newExpLocation] = useState('');
   const [newExpStartDate, setNewExpStartDate] = useState('');
   const [newExpDesc, setNewExpDesc] = useState('');
 
@@ -254,7 +249,7 @@ export const CareerLakeView: React.FC<CareerLakeViewProps> = ({
               />
             </div>
 
-            {/* Segmented Filter Buttons */}
+            {/* Segmented Buttons */}
             <div className="flex items-center gap-1 p-1 bg-neutral-100 rounded-md w-full sm:w-auto overflow-x-auto">
               <button
                 onClick={() => setEvidenceFilter('all')}

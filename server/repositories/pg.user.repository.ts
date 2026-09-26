@@ -13,6 +13,8 @@ export class PgUserRepository implements IUserRepository {
       name: u.name,
       avatar: u.avatar || undefined,
       currentRole: u.currentRole,
+      createdAt: u.createdAt.toISOString(),
+      updatedAt: u.updatedAt.toISOString(),
     }));
   }
 
@@ -27,6 +29,8 @@ export class PgUserRepository implements IUserRepository {
       name: u.name,
       avatar: u.avatar || undefined,
       currentRole: u.currentRole,
+      createdAt: u.createdAt.toISOString(),
+      updatedAt: u.updatedAt.toISOString(),
     };
   }
 
@@ -41,6 +45,8 @@ export class PgUserRepository implements IUserRepository {
       name: u.name,
       avatar: u.avatar || undefined,
       currentRole: u.currentRole,
+      createdAt: u.createdAt.toISOString(),
+      updatedAt: u.updatedAt.toISOString(),
     };
   }
 
@@ -63,6 +69,8 @@ export class PgUserRepository implements IUserRepository {
       name: u.name,
       avatar: u.avatar || undefined,
       currentRole: u.currentRole,
+      createdAt: u.createdAt.toISOString(),
+      updatedAt: u.updatedAt.toISOString(),
     };
   }
 
@@ -76,11 +84,22 @@ export class PgUserRepository implements IUserRepository {
       expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24 * 7),
     }).returning();
 
+    const userResult = await db.select().from(users).where(eq(users.id, userId)).limit(1);
+    const u = userResult[0];
+
     return {
       token: sess.tokenHash,
       userId: sess.userId,
-      createdAt: sess.createdAt.toISOString(),
       expiresAt: sess.expiresAt.toISOString(),
+      user: {
+        id: u.id,
+        email: u.email,
+        name: u.name,
+        avatar: u.avatar || undefined,
+        currentRole: u.currentRole,
+        createdAt: u.createdAt.toISOString(),
+        updatedAt: u.updatedAt.toISOString(),
+      }
     };
   }
 
@@ -89,11 +108,23 @@ export class PgUserRepository implements IUserRepository {
     if (result.length === 0) return null;
     const sess = result[0];
     if (sess.revokedAt) return null;
+    const userResult = await db.select().from(users).where(eq(users.id, sess.userId)).limit(1);
+    if (userResult.length === 0) return null;
+    const u = userResult[0];
+
     return {
       token: sess.tokenHash,
       userId: sess.userId,
-      createdAt: sess.createdAt.toISOString(),
       expiresAt: sess.expiresAt.toISOString(),
+      user: {
+        id: u.id,
+        email: u.email,
+        name: u.name,
+        avatar: u.avatar || undefined,
+        currentRole: u.currentRole,
+        createdAt: u.createdAt.toISOString(),
+        updatedAt: u.updatedAt.toISOString(),
+      }
     };
   }
 
