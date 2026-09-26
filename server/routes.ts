@@ -68,7 +68,7 @@ apiRouter.post('/auth/register', authRateLimiter, validateBody(RegisterSchema), 
   try {
     const { email, name, password, role } = req.body;
     const result = await authService.register(email, name, password, role);
-    res.json(result);
+    res.status(201).json(result);
   } catch (err: any) {
     res.status(409).json({
       error: {
