@@ -52,7 +52,7 @@ jobs:
         run: npx tsc --noEmit --pretty false
 
       - name: Run PgRepositories Tests (Tenant Isolation & DB Constraints)
-        run: npx tsx server/repositories/__tests__/pg.repositories.test.ts
+        run: npx vitest run server/repositories/__tests__/pg.repositories.test.ts
 
       - name: Run Integration Tests (API + PgRepositories + Gate 0)
         run: npm run test

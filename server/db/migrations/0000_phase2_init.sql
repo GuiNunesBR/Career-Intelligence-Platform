@@ -332,7 +332,7 @@ END $$;
 
 -- THIS IS THE MANUAL FIX FOR background_jobs -> user_automations
 DO $$ BEGIN
- ALTER TABLE "background_jobs" ADD CONSTRAINT "background_jobs_user_id_automation_id_user_automations_user_id_id_fk" FOREIGN KEY ("user_id","automation_id") REFERENCES "user_automations"("user_id","id") ON DELETE SET NULL ("automation_id") ON UPDATE no action;
+ ALTER TABLE "background_jobs" ADD CONSTRAINT "background_jobs_automation_fk" FOREIGN KEY ("user_id","automation_id") REFERENCES "user_automations"("user_id","id") ON DELETE SET NULL ("automation_id") ON UPDATE no action;
 EXCEPTION
  WHEN duplicate_object THEN null;
 END $$;
