@@ -147,6 +147,7 @@ export class PgQueueRepository implements IJobQueueRepository {
     
     existing.status = 'cancelled';
     existing.finishedAt = new Date().toISOString();
+    existing.logs.push(`[${new Date().toISOString()}] Job cancelled by user`);
     return this.saveBackgroundJob(userId, existing);
   }
 }

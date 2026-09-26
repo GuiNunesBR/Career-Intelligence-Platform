@@ -148,6 +148,7 @@ export async function runAIValidationTests(): Promise<void> {
   // 5. Tailoring Grounding & Evidence Fallback Regression Tests
   console.log('    [Tailoring Grounding & Anti-Hallucination Suite]');
   const { TailoringService } = await import('../server/services/tailoring.service.js');
+  const { tailoringRepository, jobRepository, careerLakeRepository } = await import('../server/container.js');
   const expA = lakeA.experiences[0];
   const expB = await careerLakeService.addExperience(userB, { company: 'B', title: 'T', startDate: '2020', employmentType: 'ft', domain: 'IT', location: 'Rem', description: 'desc' });
   const lakeB = await careerLakeService.getUserLake(userB);
@@ -187,10 +188,9 @@ export async function runAIValidationTests(): Promise<void> {
   };
 
   const tailoringValidService = new TailoringService(
-    undefined,
-    undefined,
-    undefined,
-    undefined,
+    tailoringRepository,
+    jobRepository,
+    careerLakeRepository,
     mockAIValid
   );
 
@@ -231,10 +231,9 @@ export async function runAIValidationTests(): Promise<void> {
   };
 
   const tailoringInexistentService = new TailoringService(
-    undefined,
-    undefined,
-    undefined,
-    undefined,
+    tailoringRepository,
+    jobRepository,
+    careerLakeRepository,
     mockAIInexistent
   );
 
@@ -280,10 +279,9 @@ export async function runAIValidationTests(): Promise<void> {
   };
 
   const tailoringCrossUserService = new TailoringService(
-    undefined,
-    undefined,
-    undefined,
-    undefined,
+    tailoringRepository,
+    jobRepository,
+    careerLakeRepository,
     mockAICrossUser
   );
 
@@ -331,10 +329,9 @@ export async function runAIValidationTests(): Promise<void> {
   };
 
   const tailoringRegressionService = new TailoringService(
-    undefined,
-    undefined,
-    undefined,
-    undefined,
+    tailoringRepository,
+    jobRepository,
+    careerLakeRepository,
     mockAIAllHallucinated
   );
 
@@ -412,10 +409,9 @@ export async function runAIValidationTests(): Promise<void> {
   };
 
   const tailoringPersistenceService = new TailoringService(
-    undefined,
-    undefined,
-    undefined,
-    undefined,
+    tailoringRepository,
+    jobRepository,
+    careerLakeRepository,
     mockAIPartialInvalid
   );
 
