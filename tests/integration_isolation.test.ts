@@ -80,6 +80,7 @@ export async function runIntegrationIsolationTest(): Promise<void> {
           evidenceRequired: 'Audit proof',
         },
       ],
+      rawText: 'Confidential strategy lead job posting with private capex portfolio focus',
     },
   });
   assert.strictEqual(createJobA.status, 200);
