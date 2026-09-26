@@ -4,7 +4,7 @@ import {
   JobParsingAIOutputSchema,
   TailoringCVAIOutputSchema,
 } from '../server/validation/ai_schemas.js';
-import { analysisService, jobService, careerLakeService } from '../server/container.js';
+import { authService, analysisService, jobService, careerLakeService } from '../server/container.js';
 
 export async function runAIValidationTests(): Promise<void> {
   console.log('  [TEST SUITE] AI Output Validation & Grounding');
@@ -47,9 +47,12 @@ export async function runAIValidationTests(): Promise<void> {
   console.log('    ✓ Malformed AI output rejected by schema');
 
   // 3. Foreign / Unknown Evidence ID Sanitization & Grounding
-  const userA = 'usr_alex_costa';
-  const lakeA = careerLakeService.getUserLake(userA);
-  const realEvA = lakeA.evidences[0];
+  const regA = await authService.register(`alex_${Date.now()}@test.com`, 'Alex Costa', 'Pass123!');
+  const userA = regA.user.id;
+  const createdExpA = await careerLakeService.addExperience(userA, { company: 'A', title: 'T', startDate: '2020', employmentType: 'ft', domain: 'IT', location: 'Rem', description: 'desc' });
+  const realEvA = await careerLakeService.addEvidence(userA, { experienceId: createdExpA.id, type: 'direct', statement: 'Statement', metric: '100%', source: 'Doc', confidence: 'high', domainTag: 'Tag' });
+  
+  const lakeA = await careerLakeService.getUserLake(userA);
 
   const syntheticFitOutput = {
     jobId: 'job_test_1',
@@ -119,7 +122,9 @@ export async function runAIValidationTests(): Promise<void> {
   console.log('    ✓ Hallucinated and foreign evidence IDs stripped during grounding validation');
 
   // 4. Foreign Job ID Validation in Analysis Service
-  const jobB = jobService.createJob('usr_mariana_silva', {
+  const regB = await authService.register(`mariana_${Date.now()}@test.com`, 'Mariana Silva', 'Pass123!');
+  const userB = regB.user.id;
+  const jobB = await jobService.createJob(userB, {
     company: 'BioTech Co',
     title: 'Formulation Chemist',
     location: 'Campinas',
@@ -133,21 +138,21 @@ export async function runAIValidationTests(): Promise<void> {
   // User A attempts to run fit analysis against Mariana's job
   await assert.rejects(
     async () => analysisService.runFitAnalysis(userA, jobB.id),
-    /Job access forbidden|access denied/,
+    /Job access forbidden|access denied/i,
     'Analyzing foreign job must be rejected'
   );
   console.log('    ✓ Foreign job ID access in analysis service blocked');
 
-  jobService.deleteJob('usr_mariana_silva', jobB.id);
+  await jobService.deleteJob(userB, jobB.id);
 
   // 5. Tailoring Grounding & Evidence Fallback Regression Tests
   console.log('    [Tailoring Grounding & Anti-Hallucination Suite]');
   const { TailoringService } = await import('../server/services/tailoring.service.js');
   const expA = lakeA.experiences[0];
-  const lakeB = careerLakeService.getUserLake('usr_mariana_silva');
-  const expB = lakeB.experiences[0];
+  const expB = await careerLakeService.addExperience(userB, { company: 'B', title: 'T', startDate: '2020', employmentType: 'ft', domain: 'IT', location: 'Rem', description: 'desc' });
+  const lakeB = await careerLakeService.getUserLake(userB);
 
-  const jobA = jobService.createJob(userA, {
+  const jobA = await jobService.createJob(userA, {
     company: 'Alpha Industrial Corp',
     title: 'Director of Strategic Capex',
     location: 'Curitiba',
@@ -351,7 +356,7 @@ export async function runAIValidationTests(): Promise<void> {
   );
 
   // Verify that neither hallucinated ID was persisted in the repository (confirming zero fallback)
-  const persistedCV = tailoringRegressionService.getTailoredCV(userA, jobA.id);
+  const persistedCV = await tailoringRegressionService.getTailoredCV(userA, jobA.id);
   if (persistedCV) {
     assert.ok(
       !persistedCV.selectedExperiences.some(
@@ -416,7 +421,7 @@ export async function runAIValidationTests(): Promise<void> {
 
   await tailoringPersistenceService.generateTailoredCV(userA, jobA.id, 'balanced');
   // Check the object persisted directly in repository
-  const persistedInRepo = tailoringPersistenceService.getTailoredCV(userA, jobA.id);
+  const persistedInRepo = await tailoringPersistenceService.getTailoredCV(userA, jobA.id);
   assert.ok(persistedInRepo, 'CV must be persisted in repository');
   assert.strictEqual(persistedInRepo?.userId, userA, 'Persisted CV must belong to userA');
   assert.strictEqual(persistedInRepo?.selectedExperiences.length, 1, 'Only genuine userA experience can be persisted');
@@ -443,5 +448,5 @@ export async function runAIValidationTests(): Promise<void> {
   );
   console.log('    ✓ TEST 8 — Persistência não recebe referência inválida: Nenhum dado inválido chega ao repository');
 
-  jobService.deleteJob(userA, jobA.id);
+  await jobService.deleteJob(userA, jobA.id);
 }
