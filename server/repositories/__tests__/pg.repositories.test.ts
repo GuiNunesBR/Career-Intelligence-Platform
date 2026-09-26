@@ -103,6 +103,9 @@ describe('V3.1 Phase 3 - PostgreSQL & Repositories Verification', () => {
   describe('3. Repository CRUD Operations', () => {
     it('should correctly save and retrieve a Fit Analysis', async () => {
       const user = await userRepo.createUser('crud1@test.com', 'CRUD 1');
+      const job = await jobRepo.saveJob(user.id, {
+        id: 'job1', userId: user.id, company: 'C', title: 'T', location: 'L', seniority: 'S', employmentType: 'FT', description: 'Desc', requirements: [], rawText: 'Raw', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString()
+      });
       const analysis = await analysisRepo.saveAnalysis(user.id, {
         id: 'analysis1', jobId: 'job1', overallSummary: 'Summary', dimensions: [], evidenceMatrix: [], strongMatches: [], transferableExperiences: [], domainGaps: [], missingEvidence: [], recommendedCvFocus: []
       });
