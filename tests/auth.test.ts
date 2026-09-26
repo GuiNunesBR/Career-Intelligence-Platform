@@ -12,7 +12,7 @@ export async function runAuthTests(): Promise<void> {
   const regResult = await authService.register(testEmail, 'Carlos Teste', testPassword, 'Lead Architect');
   const sessionResult = await authService.login({ email: testEmail, password: testPassword });
   assert.ok(sessionResult.session?.token, 'Registration+Login should return an active session token');
-  assert.strictEqual(regResult.email, testEmail, 'Normalized email should match');
+  assert.strictEqual(regResult.user.email, testEmail, 'Normalized email should match');
   assert.strictEqual((regResult.user as any).passwordHash, undefined, 'Sanitized user must NEVER contain passwordHash');
   console.log('    ✓ Register valid user & sanitize passwordHash');
 
@@ -61,7 +61,7 @@ export async function runAuthTests(): Promise<void> {
   assert.strictEqual(parseMissingEmail.success, false, 'LoginSchema must reject payload missing email');
 
   await assert.rejects(
-    () => authService.login({ userId: regResult.id } as any),
+    () => authService.login({ userId: regResult.user.id } as any),
     /Invalid credentials/,
     'Authentication using userId alone must be strictly rejected'
   );
@@ -69,7 +69,7 @@ export async function runAuthTests(): Promise<void> {
   assert.strictEqual(parseOnlyUserId.success, false, 'LoginSchema must reject payload with only userId');
 
   await assert.rejects(
-    () => authService.login({ userId: regResult.id, password: testPassword } as any),
+    () => authService.login({ userId: regResult.user.id, password: testPassword } as any),
     /Invalid credentials/,
     'Authentication using userId + password without email must be rejected'
   );
@@ -81,7 +81,7 @@ export async function runAuthTests(): Promise<void> {
   // Session Valid
   const verifiedUser = await authService.verifySession(loginResult.session.token);
   assert.ok(verifiedUser, 'Valid session token must return authenticated user');
-  assert.strictEqual(verifiedUser?.id, regResult.id, 'Verified user ID must match registered user');
+  assert.strictEqual(verifiedUser?.id, regResult.user.id, 'Verified user ID must match registered user');
   console.log('    ✓ Session token successfully verified via token hash');
 
   // Session Invalid / Expired
