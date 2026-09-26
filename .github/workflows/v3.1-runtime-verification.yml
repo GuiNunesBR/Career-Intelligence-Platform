@@ -21,7 +21,7 @@ jobs:
         ports:
           - 5432:5432
         options: >-
-          --health-cmd "pg_isready -U career_user"
+          --health-cmd "pg_isready -U career_user -d career_lake_test"
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
@@ -49,7 +49,12 @@ jobs:
         run: PGPASSWORD=career_password psql -h localhost -U career_user -d career_lake_test -f server/db/migrations/0000_phase2_init.sql
 
       - name: Validate TypeScript Compilation
-        run: npx tsc --noEmit --pretty false
+        run: |
+          set -o pipefail
+          npx tsc --noEmit --pretty false 2>&1 | tee /tmp/tsc.log || true
+          status=${PIPESTATUS[0]}
+          cat /tmp/tsc.log
+          exit $status
 
       - name: Run PgRepositories Tests (Tenant Isolation & DB Constraints)
         run: npx vitest run server/repositories/__tests__/pg.repositories.test.ts
