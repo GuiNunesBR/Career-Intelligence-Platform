@@ -90,7 +90,9 @@ export async function runDatabasePhase2Tests() {
     });
     assert.fail('Should have failed composite FK check');
   } catch (err: any) {
-    assert(err.message.includes('foreign key constraint') || err.message.includes('violates foreign key'), 'Cross-tenant reference should fail');
+    const errorStr = String(err.cause || err.message || err);
+    const isFk = errorStr.includes('foreign key constraint') || errorStr.includes('violates foreign key') || (err.cause?.code === '23503');
+    assert.ok(isFk, `Cross-tenant reference should fail. Actual error: ${errorStr}`);
   }
 
   // 6. nullable composite FK
