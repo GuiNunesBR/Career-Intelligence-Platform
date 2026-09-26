@@ -47,7 +47,7 @@ export class PgTailoringRepository implements ITailoringRepository {
         selectedProjects: cv.selectedProjects,
         atsKeywordsMatched: cv.atsKeywordsMatched,
         honestyAuditNotes: cv.honestyAuditNotes,
-      }).where(and(eq(tailoredCvs.userId, userId), eq(tailoredCvs.id, cv.id))).returning();
+      }).where(and(eq(tailoredCvs.userId, userId), eq(tailoredCvs.id, existing.id))).returning();
       
       return {
         ...updated,
@@ -115,7 +115,7 @@ export class PgTailoringRepository implements ITailoringRepository {
         subject: letter.subject,
         content: letter.content,
         groundedFacts: letter.groundedFacts,
-      }).where(and(eq(coverLetters.userId, userId), eq(coverLetters.id, letter.id))).returning();
+      }).where(and(eq(coverLetters.userId, userId), eq(coverLetters.id, existing.id))).returning();
       
       return {
         ...updated,
