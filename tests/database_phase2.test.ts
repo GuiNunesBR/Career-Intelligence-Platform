@@ -193,7 +193,7 @@ export async function runDatabasePhase2Tests() {
     scheduledAt: new Date(),
     status: 'pending',
     logs: []
-  }).onConflictDoNothing({ target: [schema.backgroundJobs.userId, schema.backgroundJobs.idempotencyKey] });
+  }).onConflictDoNothing();
 
   // Concurrent second insert
   await db.insert(schema.backgroundJobs).values({
@@ -204,7 +204,7 @@ export async function runDatabasePhase2Tests() {
     scheduledAt: new Date(),
     status: 'pending',
     logs: []
-  }).onConflictDoNothing({ target: [schema.backgroundJobs.userId, schema.backgroundJobs.idempotencyKey] });
+  }).onConflictDoNothing();
 
   // Tenant-scoped
   await db.insert(schema.backgroundJobs).values({
@@ -215,7 +215,7 @@ export async function runDatabasePhase2Tests() {
     scheduledAt: new Date(),
     status: 'pending',
     logs: []
-  }).onConflictDoNothing({ target: [schema.backgroundJobs.userId, schema.backgroundJobs.idempotencyKey] });
+  }).onConflictDoNothing();
 
   const jobsUserA = await db.select().from(schema.backgroundJobs).where(eq(schema.backgroundJobs.userId, userAId));
   const jobsUserB = await db.select().from(schema.backgroundJobs).where(eq(schema.backgroundJobs.userId, userBId));
