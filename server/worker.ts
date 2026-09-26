@@ -59,13 +59,14 @@ export class BackgroundWorker {
 
   private async executeJob(job: BackgroundJob): Promise<void> {
     const userId = job.userId;
-    job.status = 'running';
-    job.startedAt = new Date().toISOString();
-    job.progress = 10;
-    job.logs.push(`[${new Date().toISOString()}] Worker assigned job. Target user scope: ${userId}`);
-    await jobQueueRepository.saveBackgroundJob(userId, job);
 
     try {
+      job.status = 'running';
+      job.startedAt = new Date().toISOString();
+      job.progress = 10;
+      job.logs.push(`[${new Date().toISOString()}] Worker assigned job. Target user scope: ${userId}`);
+      await jobQueueRepository.saveBackgroundJob(userId, job);
+
       const lake = await careerLakeRepository.getUserLake(userId);
 
       if (job.jobType === 'nightly_analysis' || job.jobType === 'batch_job_refresh') {
@@ -141,6 +142,12 @@ export class BackgroundWorker {
       }
     } catch (err: any) {
       console.error(`Error processing background job ${job.id}:`, err);
+
+      // If the job was deleted concurrently, do not try to save it back
+      if (err.message?.includes('Concurrency error: Background job')) {
+        return;
+      }
+
       job.retryCount = (job.retryCount || 0) + 1;
       job.logs.push(`[${new Date().toISOString()}] ERROR: ${err.message || 'Execution error'}`);
 
@@ -154,7 +161,11 @@ export class BackgroundWorker {
         job.logs.push(`[${new Date().toISOString()}] Job marked as failed after ${MAX_RETRIES} attempts.`);
       }
 
-      await jobQueueRepository.saveBackgroundJob(userId, job);
+      try {
+        await jobQueueRepository.saveBackgroundJob(userId, job);
+      } catch (saveErr) {
+        console.error(`Failed to save error state for job ${job.id}:`, saveErr);
+      }
     }
   }
 }
