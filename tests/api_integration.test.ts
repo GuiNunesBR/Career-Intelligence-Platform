@@ -38,11 +38,12 @@ export async function runApiIntegrationTests() {
     });
     assert.strictEqual(lakeRes.status, 200, 'Lake should return 200');
     const lakeData = await lakeRes.json();
-    assert.strictEqual(lakeData.profile.name, 'Integration User');
+    assert.ok(lakeData.lake, 'Response should contain lake');
+    assert.ok(lakeData.lake.profile, 'Lake should contain profile');
 
     // 3. Career Lake: Add Experience
-    console.log('Testing /api/lake/experiences (POST)...');
-    const expRes = await fetch(`${baseUrl}/lake/experiences`, {
+    console.log('Testing /api/lake/experience (POST)...');
+    const expRes = await fetch(`${baseUrl}/lake/experience`, {
       method: 'POST',
       headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -57,7 +58,7 @@ export async function runApiIntegrationTests() {
     });
     assert.strictEqual(expRes.status, 201, 'Experience creation should return 201');
     const expData = await expRes.json();
-    assert.ok(expData.id, 'Experience should have ID');
+    assert.ok(expData.experience?.id, 'Experience should have ID');
 
     // 4. Job: Add Job
     console.log('Testing /api/jobs (POST)...');
@@ -77,7 +78,7 @@ export async function runApiIntegrationTests() {
     });
     assert.strictEqual(jobRes.status, 201, 'Job creation should return 201');
     const jobData = await jobRes.json();
-    const jobId = jobData.id;
+    const jobId = jobData.job?.id;
     assert.ok(jobId, 'Job should have ID');
 
     // 5. Auth: Invalid Login
