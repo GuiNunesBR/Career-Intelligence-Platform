@@ -1,11 +1,11 @@
-import { PgUserRepository } from './repositories/pg.user.repository.js';
-import { PgCareerLakeRepository } from './repositories/pg.lake.repository.js';
-import { PgJobRepository } from './repositories/pg.job.repository.js';
-import { PgAnalysisRepository } from './repositories/pg.analysis.repository.js';
-import { PgTailoringRepository } from './repositories/pg.tailoring.repository.js';
-import { PgApplicationRepository } from './repositories/pg.application.repository.js';
-import { PgQueueRepository } from './repositories/pg.queue.repository.js';
-import { PgAutomationRepository } from './repositories/pg.automation.repository.js';
+import { SqliteUserRepository } from './repositories/sqlite.user.repository.js';
+import { SqliteCareerLakeRepository } from './repositories/sqlite.lake.repository.js';
+import { SqliteJobRepository } from './repositories/sqlite.job.repository.js';
+import { SqliteAnalysisRepository } from './repositories/sqlite.analysis.repository.js';
+import { SqliteTailoringRepository } from './repositories/sqlite.tailoring.repository.js';
+import { SqliteApplicationRepository } from './repositories/sqlite.application.repository.js';
+import { SqliteQueueRepository } from './repositories/sqlite.queue.repository.js';
+import { SqliteAutomationRepository } from './repositories/sqlite.automation.repository.js';
 
 import { AuthService } from './services/auth.service.js';
 import { CareerLakeService } from './services/lake.service.js';
@@ -20,16 +20,15 @@ import { AIService } from './services/ai.service.js';
 // =========================================
 // 1. REPOSITORIES (Composition Root)
 // =========================================
-// The default path for production is PostgreSQL.
-// Legacy JSON repositories are not instantiated here.
-export const userRepository = new PgUserRepository();
-export const careerLakeRepository = new PgCareerLakeRepository();
-export const jobRepository = new PgJobRepository();
-export const analysisRepository = new PgAnalysisRepository();
-export const tailoringRepository = new PgTailoringRepository();
-export const applicationRepository = new PgApplicationRepository();
-export const jobQueueRepository = new PgQueueRepository();
-export const automationRepository = new PgAutomationRepository();
+// V3: SQLite
+export const userRepository = new SqliteUserRepository();
+export const careerLakeRepository = new SqliteCareerLakeRepository();
+export const jobRepository = new SqliteJobRepository();
+export const analysisRepository = new SqliteAnalysisRepository();
+export const tailoringRepository = new SqliteTailoringRepository();
+export const applicationRepository = new SqliteApplicationRepository();
+export const jobQueueRepository = new SqliteQueueRepository();
+export const automationRepository = new SqliteAutomationRepository();
 
 // =========================================
 // 2. EXTERNAL SERVICES

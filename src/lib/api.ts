@@ -228,6 +228,11 @@ export const api = {
       method: 'POST',
     }),
 
+  // Search Agents
+  getSearchAgents: () => request<{ agents: any[] }>('/api/search-agents'),
+  createSearchAgent: (data: any) => request<{ agent: any }>('/api/search-agents', { method: 'POST', body: JSON.stringify(data) }),
+  deleteSearchAgent: (id: string) => request<{ success: boolean }>(`/api/search-agents/${id}`, { method: 'DELETE' }),
+
   // Stats
   getStats: () => request<{ stats: any }>('/api/stats'),
 };

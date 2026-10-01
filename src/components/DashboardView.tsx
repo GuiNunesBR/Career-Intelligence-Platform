@@ -18,6 +18,7 @@ interface DashboardViewProps {
   onNavigate: (tab: string, jobId?: string) => void;
   onRunAudit: () => void;
   onTriggerNightWorker: () => void;
+  onTriggerJobSearch: () => void;
 }
 
 export const DashboardView: React.FC<DashboardViewProps> = ({
@@ -29,6 +30,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   onNavigate,
   onRunAudit,
   onTriggerNightWorker,
+  onTriggerJobSearch,
 }) => {
   const directEvidences = lake.evidences.filter((e) => e.type === 'direct').length;
   const transferableEvidences = lake.evidences.filter((e) => e.type === 'transferable').length;
@@ -331,6 +333,12 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 className="w-full py-2 px-3 text-xs font-medium text-neutral-800 bg-neutral-100 hover:bg-neutral-200 rounded transition-colors text-center"
               >
                 Executar Reanálise Noturna das Vagas
+              </button>
+              <button
+                onClick={onTriggerJobSearch}
+                className="w-full py-2 px-3 text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 rounded transition-colors text-center"
+              >
+                Ativar Agent: Buscar Vagas Automáticas (V1 Mock)
               </button>
             </div>
           </div>

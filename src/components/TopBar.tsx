@@ -30,7 +30,7 @@ export const TopBar: React.FC<TopBarProps> = ({
     { id: 'lake', label: 'Career Lake' },
     { id: 'analyzer', label: 'Analisar Vaga' },
     { id: 'applications', label: 'Candidaturas' },
-    { id: 'worker', label: 'Background Jobs' },
+    { id: 'job_search', label: 'Busca por Vagas' },
   ];
 
   return (

@@ -1,75 +1,75 @@
 import { 
-  pgTable, text, timestamp, boolean, jsonb, uniqueIndex, foreignKey, unique, integer
-} from 'drizzle-orm/pg-core';
+  sqliteTable, text, uniqueIndex, foreignKey, unique, integer
+} from 'drizzle-orm/sqlite-core';
 import { sql } from 'drizzle-orm';
 
-export const users = pgTable('users', {
+export const users = sqliteTable('users', {
   id: text('id').primaryKey(),
   email: text('email').notNull(),
   passwordHash: text('password_hash').notNull(),
   name: text('name').notNull(),
   avatar: text('avatar'),
   currentRole: text('current_role').notNull(),
-  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
-  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull()
+  createdAt: text().default(sql`CURRENT_TIMESTAMP`).notNull(),
+  updatedAt: text().default(sql`CURRENT_TIMESTAMP`).notNull()
 }, (table) => {
   return {
-    emailIdx: uniqueIndex('users_email_idx').on(sql`lower(${table.email})`)
+    emailIdx: uniqueIndex('users_email_idx').on(table.email)
   };
 });
 
-export const sessions = pgTable('sessions', {
+export const sessions = sqliteTable('sessions', {
   id: text('id').primaryKey(),
   userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
   tokenHash: text('token_hash').notNull(),
-  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
-  expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
-  revokedAt: timestamp('revoked_at', { withTimezone: true })
+  createdAt: text().default(sql`CURRENT_TIMESTAMP`).notNull(),
+  expiresAt: text().notNull(),
+  revokedAt: text()
 }, (table) => {
   return {
     tokenHashIdx: unique('sessions_token_hash_idx').on(table.tokenHash)
   };
 });
 
-export const careerProfiles = pgTable('career_profiles', {
+export const careerProfiles = sqliteTable('career_profiles', {
   id: text('id').primaryKey(),
   userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
   headline: text('headline').notNull(),
   summary: text('summary').notNull(),
   location: text('location').notNull(),
-  targetRoles: jsonb('target_roles').notNull().$type<string[]>(),
-  targetIndustries: jsonb('target_industries').notNull().$type<string[]>(),
-  languages: jsonb('languages').notNull(),
-  education: jsonb('education').notNull(),
-  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
-  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull()
+  targetRoles: text('target_roles', { mode: 'json' }).notNull().$type<string[]>(),
+  targetIndustries: text('target_industries', { mode: 'json' }).notNull().$type<string[]>(),
+  languages: text('languages', { mode: 'json' }).notNull().$type<string[]>(),
+  education: text('education', { mode: 'json' }).notNull().$type<any[]>(),
+  createdAt: text().default(sql`CURRENT_TIMESTAMP`).notNull(),
+  updatedAt: text().default(sql`CURRENT_TIMESTAMP`).notNull()
 }, (table) => {
   return {
     userIdUnq: unique('career_profiles_user_id_unq').on(table.userId)
   };
 });
 
-export const experiences = pgTable('experiences', {
+export const experiences = sqliteTable('experiences', {
   id: text('id').primaryKey(),
   userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
   company: text('company').notNull(),
   title: text('title').notNull(),
   startDate: text('start_date').notNull(),
   endDate: text('end_date'),
-  isCurrent: boolean('is_current'),
+  isCurrent: integer('is_current', { mode: 'boolean' }),
   employmentType: text('employment_type').notNull(),
   domain: text('domain').notNull(),
   location: text('location').notNull(),
   description: text('description').notNull(),
-  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
-  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull()
+  createdAt: text().default(sql`CURRENT_TIMESTAMP`).notNull(),
+  updatedAt: text().default(sql`CURRENT_TIMESTAMP`).notNull()
 }, (table) => {
   return {
     userExpUnq: unique('experiences_user_id_id_unq').on(table.userId, table.id)
   };
 });
 
-export const projects = pgTable('projects', {
+export const projects = sqliteTable('projects', {
   id: text('id').primaryKey(),
   userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
   experienceId: text('experience_id'),
@@ -77,10 +77,10 @@ export const projects = pgTable('projects', {
   description: text('description').notNull(),
   domain: text('domain').notNull(),
   scope: text('scope').notNull(),
-  technologies: jsonb('technologies').notNull().$type<string[]>(),
+  technologies: text('technologies', { mode: 'json' }).notNull().$type<string[]>(),
   metrics: text('metrics'),
-  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
-  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull()
+  createdAt: text().default(sql`CURRENT_TIMESTAMP`).notNull(),
+  updatedAt: text().default(sql`CURRENT_TIMESTAMP`).notNull()
 }, (table) => {
   return {
     userProjUnq: unique('projects_user_id_id_unq').on(table.userId, table.id),
@@ -94,7 +94,7 @@ export const projects = pgTable('projects', {
   };
 });
 
-export const skills = pgTable('skills', {
+export const skills = sqliteTable('skills', {
   id: text('id').primaryKey(),
   userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
   name: text('name').notNull(),
@@ -103,7 +103,7 @@ export const skills = pgTable('skills', {
   yearsExperience: integer('years_experience').notNull()
 });
 
-export const evidences = pgTable('evidences', {
+export const evidences = sqliteTable('evidences', {
   id: text('id').primaryKey(),
   userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
   experienceId: text('experience_id'),
@@ -114,7 +114,7 @@ export const evidences = pgTable('evidences', {
   source: text('source').notNull(),
   confidence: text('confidence').notNull(),
   domainTag: text('domain_tag'),
-  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull()
+  createdAt: text().default(sql`CURRENT_TIMESTAMP`).notNull()
 }, (table) => {
   return {
     // NOTE: Manually altered to ON DELETE SET NULL (experience_id) in migration
@@ -130,7 +130,7 @@ export const evidences = pgTable('evidences', {
   };
 });
 
-export const jobs = pgTable('jobs', {
+export const jobs = sqliteTable('jobs', {
   id: text('id').primaryKey(),
   userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
   company: text('company').notNull(),
@@ -139,29 +139,30 @@ export const jobs = pgTable('jobs', {
   seniority: text('seniority').notNull(),
   employmentType: text('employment_type').notNull(),
   description: text('description').notNull(),
-  requirements: jsonb('requirements').notNull(),
+  requirements: text('requirements', { mode: 'json' }).notNull().$type<any>(),
   rawText: text('raw_text').notNull(),
-  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
-  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull()
+  url: text('url'),
+  createdAt: text().default(sql`CURRENT_TIMESTAMP`).notNull(),
+  updatedAt: text().default(sql`CURRENT_TIMESTAMP`).notNull()
 }, (table) => {
   return {
     userJobUnq: unique('jobs_user_id_id_unq').on(table.userId, table.id)
   };
 });
 
-export const fitAnalyses = pgTable('fit_analyses', {
+export const fitAnalyses = sqliteTable('fit_analyses', {
   id: text('id').primaryKey(),
   userId: text('user_id').notNull(),
   jobId: text('job_id').notNull(),
   overallSummary: text('overall_summary').notNull(),
-  dimensions: jsonb('dimensions').notNull(),
-  evidenceMatrix: jsonb('evidence_matrix').notNull(),
-  strongMatches: jsonb('strong_matches').notNull().$type<string[]>(),
-  transferableExperiences: jsonb('transferable_experiences').notNull().$type<string[]>(),
-  domainGaps: jsonb('domain_gaps').notNull().$type<string[]>(),
-  missingEvidence: jsonb('missing_evidence').notNull().$type<string[]>(),
-  recommendedCvFocus: jsonb('recommended_cv_focus').notNull().$type<string[]>(),
-  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull()
+  dimensions: text('dimensions', { mode: 'json' }).notNull().$type<any>(),
+  evidenceMatrix: text('evidence_matrix', { mode: 'json' }).notNull().$type<any>(),
+  strongMatches: text('strong_matches', { mode: 'json' }).notNull().$type<string[]>(),
+  transferableExperiences: text('transferable_experiences', { mode: 'json' }).notNull().$type<string[]>(),
+  domainGaps: text('domain_gaps', { mode: 'json' }).notNull().$type<string[]>(),
+  missingEvidence: text('missing_evidence', { mode: 'json' }).notNull().$type<string[]>(),
+  recommendedCvFocus: text('recommended_cv_focus', { mode: 'json' }).notNull().$type<string[]>(),
+  createdAt: text().default(sql`CURRENT_TIMESTAMP`).notNull()
 }, (table) => {
   return {
     jobFk: foreignKey({
@@ -172,19 +173,19 @@ export const fitAnalyses = pgTable('fit_analyses', {
   };
 });
 
-export const tailoredCvs = pgTable('tailored_cvs', {
+export const tailoredCvs = sqliteTable('tailored_cvs', {
   id: text('id').primaryKey(),
   userId: text('user_id').notNull(),
   jobId: text('job_id').notNull(),
   mode: text('mode').notNull(),
   headline: text('headline').notNull(),
   summary: text('summary').notNull(),
-  selectedExperiences: jsonb('selected_experiences').notNull(),
-  selectedSkills: jsonb('selected_skills').notNull(),
-  selectedProjects: jsonb('selected_projects').notNull(),
-  atsKeywordsMatched: jsonb('ats_keywords_matched').notNull().$type<string[]>(),
-  honestyAuditNotes: jsonb('honesty_audit_notes').notNull().$type<string[]>(),
-  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull()
+  selectedExperiences: text('selected_experiences', { mode: 'json' }).notNull().$type<any>(),
+  selectedSkills: text('selected_skills', { mode: 'json' }).notNull().$type<any>(),
+  selectedProjects: text('selected_projects', { mode: 'json' }).notNull().$type<any>(),
+  atsKeywordsMatched: text('ats_keywords_matched', { mode: 'json' }).notNull().$type<string[]>(),
+  honestyAuditNotes: text('honesty_audit_notes', { mode: 'json' }).notNull().$type<string[]>(),
+  createdAt: text().default(sql`CURRENT_TIMESTAMP`).notNull()
 }, (table) => {
   return {
     jobFk: foreignKey({
@@ -195,15 +196,15 @@ export const tailoredCvs = pgTable('tailored_cvs', {
   };
 });
 
-export const coverLetters = pgTable('cover_letters', {
+export const coverLetters = sqliteTable('cover_letters', {
   id: text('id').primaryKey(),
   userId: text('user_id').notNull(),
   jobId: text('job_id').notNull(),
   recipient: text('recipient').notNull(),
   subject: text('subject').notNull(),
   content: text('content').notNull(),
-  groundedFacts: jsonb('grounded_facts').notNull().$type<string[]>(),
-  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull()
+  groundedFacts: text('grounded_facts', { mode: 'json' }).notNull().$type<string[]>(),
+  createdAt: text().default(sql`CURRENT_TIMESTAMP`).notNull()
 }, (table) => {
   return {
     jobFk: foreignKey({
@@ -213,21 +214,21 @@ export const coverLetters = pgTable('cover_letters', {
   };
 });
 
-export const applications = pgTable('applications', {
+export const applications = sqliteTable('applications', {
   id: text('id').primaryKey(),
   userId: text('user_id').notNull(),
   jobId: text('job_id').notNull(),
   jobTitle: text('job_title').notNull(),
   company: text('company').notNull(),
   status: text('status').notNull(),
-  appliedAt: timestamp('applied_at', { withTimezone: true }),
+  appliedAt: text(),
   cvVersionId: text('cv_version_id'),
   coverLetterId: text('cover_letter_id'),
   notes: text('notes').notNull(),
   salaryTarget: text('salary_target'),
-  timeline: jsonb('timeline').notNull(),
-  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
-  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull()
+  timeline: text('timeline', { mode: 'json' }).notNull().$type<any>(),
+  createdAt: text().default(sql`CURRENT_TIMESTAMP`).notNull(),
+  updatedAt: text().default(sql`CURRENT_TIMESTAMP`).notNull()
 }, (table) => {
   return {
     jobFk: foreignKey({
@@ -238,41 +239,42 @@ export const applications = pgTable('applications', {
   };
 });
 
-export const userAutomations = pgTable('user_automations', {
+export const userAutomations = sqliteTable('user_automations', {
   id: text('id').primaryKey(),
   userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
   type: text('type').notNull(),
-  enabled: boolean('enabled').notNull().default(true),
-  schedule: jsonb('schedule').notNull(),
-  nextRunAt: timestamp('next_run_at', { withTimezone: true }).notNull(),
-  lastRunAt: timestamp('last_run_at', { withTimezone: true }),
-  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
-  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull()
+  enabled: integer('enabled').notNull().default(1),
+  schedule: text('schedule').notNull(),
+  nextRunAt: text().notNull(),
+  lastRunAt: text(),
+  createdAt: text().default(sql`CURRENT_TIMESTAMP`).notNull(),
+  updatedAt: text().default(sql`CURRENT_TIMESTAMP`).notNull()
 }, (table) => {
   return {
     userAutoUnq: unique('user_automations_user_id_id_unq').on(table.userId, table.id)
   };
 });
 
-export const backgroundJobs = pgTable('background_jobs', {
+export const backgroundJobs = sqliteTable('background_jobs', {
   id: text('id').primaryKey(),
   userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
   jobType: text('job_type').notNull(),
   automationId: text('automation_id'),
   idempotencyKey: text('idempotency_key'),
-  scheduledAt: timestamp('scheduled_at', { withTimezone: true }).notNull(),
+  scheduledAt: text().notNull(),
   status: text('status').notNull(),
-  startedAt: timestamp('started_at', { withTimezone: true }),
-  finishedAt: timestamp('finished_at', { withTimezone: true }),
+  startedAt: text(),
+  finishedAt: text(),
   progress: integer('progress').notNull().default(0),
-  result: jsonb('result'),
+  payload: text('payload', { mode: 'json' }).$type<any>(),
+  result: text('result', { mode: 'json' }).$type<any>(),
   error: text('error'),
   attempt: integer('attempt').notNull().default(0),
   maxAttempts: integer('max_attempts').notNull().default(3),
   retryCount: integer('retry_count').notNull().default(0),
-  logs: jsonb('logs').notNull().$type<string[]>(),
-  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
-  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull()
+  logs: text('logs', { mode: 'json' }).notNull().$type<string[]>(),
+  createdAt: text().default(sql`CURRENT_TIMESTAMP`).notNull(),
+  updatedAt: text().default(sql`CURRENT_TIMESTAMP`).notNull()
 }, (table) => {
   return {
     // NOTE: Manually altered to ON DELETE SET NULL (automation_id) in migration
@@ -283,4 +285,19 @@ export const backgroundJobs = pgTable('background_jobs', {
     }).onDelete('no action'),
     idemUnq: uniqueIndex('background_jobs_idempotency_idx').on(table.userId, table.idempotencyKey).where(sql`idempotency_key IS NOT NULL`)
   };
+});
+
+export const searchAgents = sqliteTable('search_agents', {
+  id: text('id').primaryKey(),
+  userId: text('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  name: text('name').notNull(),
+  roles: text('roles', { mode: 'json' }).notNull().$type<string[]>(),
+  seniority: text('seniority', { mode: 'json' }).notNull().$type<string[]>(),
+  location: text('location'),
+  mode: text('mode'),
+  frequency: text('frequency').notNull(), // 'manual', '1h', '3h', 'daily'
+  isActive: integer('is_active', { mode: 'boolean' }).default(1).notNull(),
+  lastRunAt: text('last_run_at'),
+  createdAt: text().default(sql`CURRENT_TIMESTAMP`).notNull(),
+  updatedAt: text().default(sql`CURRENT_TIMESTAMP`).notNull()
 });

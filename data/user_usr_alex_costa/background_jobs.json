@@ -6,8 +6,8 @@
     "automationId": "auto_1790349399172_nsij",
     "idempotencyKey": "usr_alex_costa:auto_1790349399172_nsij:2026-09-25",
     "scheduledAt": "2026-09-25T15:16:39.174Z",
-    "status": "queued",
-    "progress": 0,
+    "status": "completed",
+    "progress": 100,
     "result": {
       "automationId": "auto_1790349399172_nsij"
     },
@@ -15,10 +15,13 @@
     "maxAttempts": 3,
     "retryCount": 0,
     "logs": [
-      "[2026-09-25T15:16:39.174Z] Job enqueued with idempotencyKey: usr_alex_costa:auto_1790349399172_nsij:2026-09-25"
+      "[2026-09-25T15:16:39.174Z] Job enqueued with idempotencyKey: usr_alex_costa:auto_1790349399172_nsij:2026-09-25",
+      "[2026-09-30T18:09:03.263Z] Worker assigned job. Target user scope: usr_alex_costa"
     ],
     "createdAt": "2026-09-25T15:16:39.174Z",
-    "updatedAt": "2026-09-25T15:16:39.174Z"
+    "updatedAt": "2026-09-30T18:09:03.292Z",
+    "startedAt": "2026-09-30T18:09:03.251Z",
+    "finishedAt": "2026-09-30T18:09:03.290Z"
   },
   {
     "id": "job_1790349399168_9emu",
@@ -26,10 +29,13 @@
     "jobType": "evidence_audit",
     "idempotencyKey": "test_idempotency_1790349399167",
     "scheduledAt": "2026-09-25T15:16:39.168Z",
-    "status": "queued",
-    "progress": 0,
+    "status": "completed",
+    "progress": 100,
     "result": {
-      "test": true
+      "totalEvidences": 0,
+      "verifiedDirect": 0,
+      "quantitativeMetrics": 0,
+      "auditHealthScore": 0
     },
     "attempt": 5,
     "maxAttempts": 3,
@@ -40,10 +46,16 @@
       "[2026-09-25T15:16:39.169Z] Job marked for retry (attempt 2/3).",
       "[2026-09-25T15:16:39.170Z] Job marked for retry (attempt 3/3).",
       "[2026-09-25T15:16:39.171Z] Job marked for retry (attempt 4/3).",
-      "[2026-09-25T15:16:39.171Z] Job marked for retry (attempt 5/3)."
+      "[2026-09-25T15:16:39.171Z] Job marked for retry (attempt 5/3).",
+      "[2026-09-30T18:09:03.315Z] Worker assigned job. Target user scope: usr_alex_costa",
+      "[2026-09-30T18:09:03.342Z] Starting career lake integrity audit.",
+      "[2026-09-30T18:09:03.367Z] Audit summary: 0 total evidences, 0 high-confidence, 0 with quantitative metrics.",
+      "[2026-09-30T18:09:03.368Z] Evidence integrity audit completed with health score."
     ],
     "createdAt": "2026-09-25T15:16:39.168Z",
-    "updatedAt": "2026-09-25T15:16:39.171Z"
+    "updatedAt": "2026-09-30T18:09:03.371Z",
+    "startedAt": "2026-09-30T18:09:03.315Z",
+    "finishedAt": "2026-09-30T18:09:03.367Z"
   },
   {
     "id": "job_1790347156059_ulxh",

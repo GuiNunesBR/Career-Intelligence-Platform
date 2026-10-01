@@ -19,7 +19,7 @@ interface TailoringViewProps {
   lake: UserCareerLake;
   currentCV: TailoredCV | null;
   coverLetter: CoverLetter | null;
-  onGenerateCV: (jobId: string, mode: TailoringMode) => Promise<void>;
+  onGenerateCV: (jobId: string, mode: TailoringMode, language?: string) => Promise<void>;
   onGenerateCoverLetter: (jobId: string) => Promise<void>;
   isGenerating?: boolean;
 }
@@ -35,11 +35,13 @@ export const TailoringView: React.FC<TailoringViewProps> = ({
 }) => {
   const [activeSubTab, setActiveSubTab] = useState<'cv' | 'cover_letter' | 'qa' | 'audit'>('cv');
   const [selectedMode, setSelectedMode] = useState<TailoringMode>('balanced');
+  const [selectedLanguage, setSelectedLanguage] = useState<string>('pt-br');
   const [copied, setCopied] = useState(false);
 
-  const handleModeChange = (mode: TailoringMode) => {
+  const handleGenerate = (mode: TailoringMode, lang: string) => {
     setSelectedMode(mode);
-    onGenerateCV(job.id, mode);
+    setSelectedLanguage(lang);
+    onGenerateCV(job.id, mode, lang);
   };
 
   const handleCopyText = (text: string) => {
@@ -101,39 +103,63 @@ export const TailoringView: React.FC<TailoringViewProps> = ({
             </p>
           </div>
 
-          <div className="flex items-center gap-1 p-1 bg-neutral-100 rounded-md text-xs">
-            <button
-              onClick={() => handleModeChange('conservative')}
-              className={`px-3 py-1.5 font-medium rounded transition-colors ${
-                selectedMode === 'conservative'
-                  ? 'bg-white text-neutral-900 shadow-sm font-semibold'
-                  : 'text-neutral-600 hover:text-neutral-900'
-              }`}
-            >
-              Conservador
-            </button>
+          <div className="flex flex-col gap-2">
+            <div className="flex items-center gap-1 p-1 bg-neutral-100 rounded-md text-xs">
+              <button
+                onClick={() => handleGenerate('conservative', selectedLanguage)}
+                className={`px-3 py-1.5 font-medium rounded transition-colors ${
+                  selectedMode === 'conservative'
+                    ? 'bg-white text-neutral-900 shadow-sm font-semibold'
+                    : 'text-neutral-600 hover:text-neutral-900'
+                }`}
+              >
+                Conservador
+              </button>
 
-            <button
-              onClick={() => handleModeChange('balanced')}
-              className={`px-3 py-1.5 font-medium rounded transition-colors ${
-                selectedMode === 'balanced'
-                  ? 'bg-white text-neutral-900 shadow-sm font-semibold'
-                  : 'text-neutral-600 hover:text-neutral-900'
-              }`}
-            >
-              Equilibrado
-            </button>
+              <button
+                onClick={() => handleGenerate('balanced', selectedLanguage)}
+                className={`px-3 py-1.5 font-medium rounded transition-colors ${
+                  selectedMode === 'balanced'
+                    ? 'bg-white text-neutral-900 shadow-sm font-semibold'
+                    : 'text-neutral-600 hover:text-neutral-900'
+                }`}
+              >
+                Equilibrado
+              </button>
 
-            <button
-              onClick={() => handleModeChange('aggressive')}
-              className={`px-3 py-1.5 font-medium rounded transition-colors ${
-                selectedMode === 'aggressive'
-                  ? 'bg-white text-neutral-900 shadow-sm font-semibold'
-                  : 'text-neutral-600 hover:text-neutral-900'
-              }`}
-            >
-              Agressivo (Transferível)
-            </button>
+              <button
+                onClick={() => handleGenerate('aggressive', selectedLanguage)}
+                className={`px-3 py-1.5 font-medium rounded transition-colors ${
+                  selectedMode === 'aggressive'
+                    ? 'bg-white text-neutral-900 shadow-sm font-semibold'
+                    : 'text-neutral-600 hover:text-neutral-900'
+                }`}
+              >
+                Agressivo
+              </button>
+            </div>
+            
+            <div className="flex items-center gap-1 p-1 bg-neutral-100 rounded-md text-xs w-fit">
+              <span className="px-2 text-neutral-500 font-semibold">Idioma:</span>
+              <button
+                onClick={() => handleGenerate(selectedMode, 'pt-br')}
+                className={`px-3 py-1 font-medium rounded transition-colors ${selectedLanguage === 'pt-br' ? 'bg-white text-neutral-900 shadow-sm' : 'text-neutral-600 hover:text-neutral-900'}`}
+              >
+                PT-BR
+              </button>
+              <button
+                onClick={() => handleGenerate(selectedMode, 'en')}
+                className={`px-3 py-1 font-medium rounded transition-colors ${selectedLanguage === 'en' ? 'bg-white text-neutral-900 shadow-sm' : 'text-neutral-600 hover:text-neutral-900'}`}
+              >
+                EN
+              </button>
+              <button
+                onClick={() => handleGenerate(selectedMode, 'es')}
+                className={`px-3 py-1 font-medium rounded transition-colors ${selectedLanguage === 'es' ? 'bg-white text-neutral-900 shadow-sm' : 'text-neutral-600 hover:text-neutral-900'}`}
+              >
+                ES
+              </button>
+            </div>
           </div>
         </div>
 

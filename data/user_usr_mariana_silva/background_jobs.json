@@ -1,0 +1,24 @@
+[
+  {
+    "id": "job_1790791743410_emfl",
+    "userId": "usr_mariana_silva",
+    "jobType": "evidence_audit",
+    "automationId": "auto_usr_mariana_silva_audit",
+    "idempotencyKey": "usr_mariana_silva:auto_usr_mariana_silva_audit:2026-09-30",
+    "scheduledAt": "2026-09-30T18:09:03.410Z",
+    "status": "queued",
+    "progress": 0,
+    "result": {
+      "automationId": "auto_usr_mariana_silva_audit",
+      "automated": true
+    },
+    "attempt": 1,
+    "maxAttempts": 3,
+    "retryCount": 0,
+    "logs": [
+      "[2026-09-30T18:09:03.410Z] Job enqueued with idempotencyKey: usr_mariana_silva:auto_usr_mariana_silva_audit:2026-09-30"
+    ],
+    "createdAt": "2026-09-30T18:09:03.410Z",
+    "updatedAt": "2026-09-30T18:09:03.410Z"
+  }
+]

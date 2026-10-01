@@ -129,6 +129,7 @@ export interface Job {
   description: string;
   requirements: JobRequirement[];
   rawText: string;
+  url?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -177,6 +178,7 @@ export interface FitAnalysis {
 }
 
 export type TailoringMode = 'conservative' | 'balanced' | 'aggressive';
+export type TailoringLanguage = 'pt-br' | 'en' | 'es';
 
 export interface TailoredCVExperience {
   experienceId: string;
@@ -205,6 +207,7 @@ export interface TailoredCV {
   userId: string;
   jobId: string;
   mode: TailoringMode;
+  language?: TailoringLanguage;
   headline: string;
   summary: string;
   selectedExperiences: TailoredCVExperience[];
@@ -274,7 +277,8 @@ export type BackgroundJobType =
   | 'document_parse'
   | 'fit_recalculation'
   | 'evidence_audit'
-  | 'scheduled_tailor';
+  | 'scheduled_tailor'
+  | 'job_search_agent';
 
 export type BackgroundJobStatus =
   | 'pending'
@@ -317,6 +321,7 @@ export interface BackgroundJob {
   idempotencyKey?: string;
   scheduledAt: string;
   status: BackgroundJobStatus;
+  payload?: any;
   startedAt?: string;
   finishedAt?: string;
   progress: number;

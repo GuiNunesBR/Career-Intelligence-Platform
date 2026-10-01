@@ -25,6 +25,7 @@ interface CareerLakeViewProps {
   onAddSkill: (skill: Omit<Skill, 'id' | 'userId'>) => Promise<void>;
   onAddEvidence: (ev: Omit<Evidence, 'id' | 'userId' | 'createdAt'>) => Promise<void>;
   onRunAudit: () => void;
+  onUploadCV?: (file: File) => Promise<void>;
 }
 
 export const CareerLakeView: React.FC<CareerLakeViewProps> = ({
@@ -34,8 +35,10 @@ export const CareerLakeView: React.FC<CareerLakeViewProps> = ({
   onAddSkill,
   onAddEvidence,
   onRunAudit,
+  onUploadCV,
 }) => {
-  const [activeTab, setActiveTab] = useState<'evidences' | 'experiences' | 'projects' | 'skills' | 'profile'>('evidences');
+  const [activeTab, setActiveTab] = useState<'evidences' | 'experiences' | 'projects' | 'skills' | 'profile'>('profile');
+  const [isUploading, setIsUploading] = useState(false);
   const [evidenceFilter, setEvidenceFilter] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -67,7 +70,7 @@ export const CareerLakeView: React.FC<CareerLakeViewProps> = ({
   const [newSkillProficiency, setNewSkillProficiency] = useState<any>('Advanced');
   const [newSkillYears, setNewSkillYears] = useState(5);
 
-  const filteredEvidences = lake.evidences.filter((ev) => {
+  const filteredEvidences = (lake.evidences || []).filter((ev) => {
     const matchesFilter = evidenceFilter === 'all' || ev.type === evidenceFilter;
     const matchesSearch =
       ev.statement.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -134,6 +137,22 @@ export const CareerLakeView: React.FC<CareerLakeViewProps> = ({
     setIsSkillModalOpen(false);
   };
 
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0] && onUploadCV) {
+      try {
+        setIsUploading(true);
+        await onUploadCV(e.target.files[0]);
+      } catch (err) {
+        console.error('Upload falhou', err);
+        alert('Falha ao processar o currículo.');
+      } finally {
+        setIsUploading(false);
+        // Reset file input
+        e.target.value = '';
+      }
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Top Header */}
@@ -154,6 +173,10 @@ export const CareerLakeView: React.FC<CareerLakeViewProps> = ({
           </div>
 
           <div className="flex items-center gap-2 shrink-0">
+            <label className={`px-3.5 py-2 text-xs font-semibold text-white bg-blue-600 rounded-md hover:bg-blue-700 transition-colors flex items-center gap-1.5 cursor-pointer ${isUploading ? 'opacity-50 cursor-not-allowed' : ''}`}>
+              <Plus className="w-3.5 h-3.5" /> {isUploading ? 'Analisando...' : 'Carregar CV (PDF)'}
+              <input type="file" accept=".pdf,.docx" className="hidden" onChange={handleFileUpload} disabled={isUploading} />
+            </label>
             <button
               onClick={() => setIsEvidenceModalOpen(true)}
               className="px-3.5 py-2 text-xs font-semibold text-white bg-neutral-900 rounded-md hover:bg-neutral-800 transition-colors flex items-center gap-1.5"
@@ -269,7 +292,7 @@ export const CareerLakeView: React.FC<CareerLakeViewProps> = ({
                     : 'text-neutral-600 hover:text-neutral-900'
                 }`}
               >
-                Diretas ({lake.evidences.filter((e) => e.type === 'direct').length})
+                Diretas ({(lake.evidences || []).filter((e) => e.type === 'direct').length})
               </button>
               <button
                 onClick={() => setEvidenceFilter('transferable')}
@@ -279,7 +302,7 @@ export const CareerLakeView: React.FC<CareerLakeViewProps> = ({
                     : 'text-neutral-600 hover:text-neutral-900'
                 }`}
               >
-                Transferíveis ({lake.evidences.filter((e) => e.type === 'transferable').length})
+                Transferíveis ({(lake.evidences || []).filter((e) => e.type === 'transferable').length})
               </button>
             </div>
           </div>
@@ -299,8 +322,8 @@ export const CareerLakeView: React.FC<CareerLakeViewProps> = ({
             ) : (
               filteredEvidences.map((ev) => {
                 const isDirect = ev.type === 'direct';
-                const exp = lake.experiences.find((e) => e.id === ev.experienceId);
-                const proj = lake.projects.find((p) => p.id === ev.projectId);
+                const exp = (lake.experiences || []).find((e) => e.id === ev.experienceId);
+                const proj = (lake.projects || []).find((p) => p.id === ev.projectId);
 
                 return (
                   <div
@@ -373,8 +396,8 @@ export const CareerLakeView: React.FC<CareerLakeViewProps> = ({
           </div>
 
           <div className="space-y-3">
-            {lake.experiences.map((exp) => {
-              const expEvidences = lake.evidences.filter((e) => e.experienceId === exp.id);
+            {(lake.experiences || []).map((exp) => {
+              const expEvidences = (lake.evidences || []).filter((e) => e.experienceId === exp.id);
               return (
                 <div key={exp.id} className="bg-white border border-neutral-200 rounded-lg p-5">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
@@ -407,7 +430,7 @@ export const CareerLakeView: React.FC<CareerLakeViewProps> = ({
         <div className="space-y-4">
           <p className="text-xs text-neutral-500">Iniciativas, entregáveis e orçamentos executados.</p>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {lake.projects.map((proj) => (
+            {(lake.projects || []).map((proj) => (
               <div key={proj.id} className="bg-white border border-neutral-200 rounded-lg p-5 space-y-2">
                 <h3 className="text-sm font-bold text-neutral-900">{proj.name}</h3>
                 <p className="text-xs text-neutral-500">Domínio: {proj.domain}</p>
@@ -424,7 +447,7 @@ export const CareerLakeView: React.FC<CareerLakeViewProps> = ({
                 )}
 
                 <div className="pt-2 flex flex-wrap gap-1.5 text-[11px] text-neutral-500">
-                  {proj.technologies.map((t, idx) => (
+                  {(proj.technologies || []).map((t, idx) => (
                     <span key={idx} className="bg-neutral-100 px-2 py-0.5 rounded">
                       {t}
                     </span>
@@ -460,7 +483,7 @@ export const CareerLakeView: React.FC<CareerLakeViewProps> = ({
                 </tr>
               </thead>
               <tbody className="divide-y divide-neutral-100">
-                {lake.skills.map((skill) => (
+                {(lake.skills || []).map((skill) => (
                   <tr key={skill.id} className="hover:bg-neutral-50 transition-colors">
                     <td className="py-3 px-4 font-semibold text-neutral-900">{skill.name}</td>
                     <td className="py-3 px-4 text-neutral-600">{skill.category}</td>
@@ -494,14 +517,14 @@ export const CareerLakeView: React.FC<CareerLakeViewProps> = ({
             </div>
             <div>
               <span className="text-neutral-500 font-medium">Cargos Alvo:</span>
-              <p className="text-neutral-900 font-semibold mt-0.5">{lake.profile.targetRoles.join(', ')}</p>
+              <p className="text-neutral-900 font-semibold mt-0.5">{(lake.profile.targetRoles || []).join(', ')}</p>
             </div>
           </div>
 
           <div className="pt-4 border-t border-neutral-100">
             <h4 className="text-xs font-semibold text-neutral-700 uppercase tracking-wider mb-2">Formação Acadêmica</h4>
             <div className="space-y-2">
-              {lake.profile.education.map((edu, idx) => (
+              {(lake.profile.education || []).map((edu, idx) => (
                 <div key={idx} className="text-xs flex justify-between py-1">
                   <div>
                     <p className="font-semibold text-neutral-900">{edu.degree} — {edu.field}</p>
@@ -597,7 +620,7 @@ export const CareerLakeView: React.FC<CareerLakeViewProps> = ({
                     className="w-full p-2 border border-neutral-300 rounded focus:ring-1 focus:ring-neutral-900 outline-none"
                   >
                     <option value="">Sem vínculo específico</option>
-                    {lake.experiences.map((exp) => (
+                    {(lake.experiences || []).map((exp) => (
                       <option key={exp.id} value={exp.id}>
                         {exp.company} — {exp.title}
                       </option>

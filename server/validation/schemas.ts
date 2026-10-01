@@ -99,6 +99,7 @@ export const FitAnalysisRequestSchema = z.object({
 export const TailorCVRequestSchema = z.object({
   jobId: z.string().min(1, 'Job ID is required'),
   mode: z.enum(['conservative', 'balanced', 'aggressive']),
+  language: z.enum(['pt-br', 'en', 'es']).optional(),
 });
 
 export const CoverLetterRequestSchema = z.object({
@@ -149,6 +150,7 @@ export const BackgroundJobEnqueueSchema = z.object({
     'fit_recalculation',
     'evidence_audit',
     'scheduled_tailor',
+    'job_search_agent',
   ]),
   payload: z.record(z.string(), z.any()).optional(),
   scheduledAt: z.string().optional(),
