@@ -10,7 +10,11 @@ import {
   automationService,
   aiService
 } from './container.js';
+import { searchAgentRepository } from './repositories/sqlite.search_agent.repository.js';
 import { authMiddleware, AuthenticatedRequest } from './middleware/auth.middleware.js';
+import multer from 'multer';
+import { createRequire } from 'module';
+const require = createRequire(import.meta.url);
 import { validateBody } from './middleware/validation.middleware.js';
 import { authRateLimiter } from './middleware/security.middleware.js';
 import {
@@ -97,11 +101,58 @@ apiRouter.post('/auth/logout', authMiddleware, async (req: AuthenticatedRequest,
 // 2. CAREER LAKE (Ground Truth / Source of Truth)
 // ==========================================
 
+const upload = multer({ storage: multer.memoryStorage() });
+
+apiRouter.post('/lake/upload-cv', authMiddleware, upload.single('file'), async (req: AuthenticatedRequest, res, next) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: 'No file uploaded' });
+    }
+    
+    // Extract text from PDF
+    const pdfParse = require('pdf-parse');
+    const data = await pdfParse(req.file.buffer);
+    const rawText = data.text;
+    
+    const parsedData = await aiService.parseResumeToLake(rawText);
+    
+    await careerLakeService.updateProfile(req.user!.id, parsedData.profile);
+    
+    for (const exp of parsedData.experiences || []) {
+      await careerLakeService.addExperience(req.user!.id, {
+        title: exp.title || "Cargo",
+        company: exp.company || "Empresa",
+        domain: exp.domain || "General",
+        startDate: exp.startDate || "2020-01",
+        endDate: exp.endDate,
+        isCurrent: exp.isCurrent,
+        location: exp.location || "Remote",
+        employmentType: exp.employmentType || "full-time",
+        description: exp.description || "Descrição ausente."
+      });
+    }
+
+    for (const skill of parsedData.skills || []) {
+      await careerLakeService.addSkill(req.user!.id, {
+        name: skill.name,
+        category: skill.category || "Functional",
+        proficiency: skill.proficiency || "Competent",
+        yearsExperience: skill.yearsExperience || 1
+      });
+    }
+
+    res.status(200).json({ success: true, message: 'CV parsed successfully', data: parsedData });
+  } catch (err) {
+    next(err);
+  }
+});
+
 apiRouter.get('/lake', authMiddleware, async (req: AuthenticatedRequest, res) => {
   try {
     const lake = await careerLakeService.getUserLake(req.user!.id);
     res.json({ lake });
   } catch (err) {
+    console.error('Error during upload-cv:', err);
     res.status(500).json({ error: String(err) });
   }
 });
@@ -283,7 +334,7 @@ apiRouter.post(
   validateBody(TailorCVRequestSchema),
   async (req: AuthenticatedRequest, res, next) => {
     try {
-      const cv = await tailoringService.generateTailoredCV(req.user!.id, req.body.jobId, req.body.mode);
+      const cv = await tailoringService.generateTailoredCV(req.user!.id, req.body.jobId, req.body.mode, req.body.language);
       res.json({ cv });
     } catch (err) {
       next(err);
@@ -336,7 +387,8 @@ apiRouter.get('/jobs/:jobId/cv', authMiddleware, async (req: AuthenticatedReques
 apiRouter.post('/jobs/:jobId/cv', authMiddleware, async (req: AuthenticatedRequest, res, next) => {
   try {
     const mode = req.body?.mode || 'balanced';
-    const cv = await tailoringService.generateTailoredCV(req.user!.id, req.params.jobId, mode);
+    const language = req.body?.language || 'pt-br';
+    const cv = await tailoringService.generateTailoredCV(req.user!.id, req.params.jobId, mode, language);
     res.json({ cv });
   } catch (err) {
     next(err);
@@ -574,3 +626,42 @@ apiRouter.post('/automations/:id/trigger', authMiddleware, async (req: Authentic
     next(err);
   }
 });
+
+// 7. SEARCH AGENTS
+// ==========================================
+
+apiRouter.get('/search-agents', authMiddleware, async (req: AuthenticatedRequest, res, next) => {
+  try {
+    const agents = await searchAgentRepository.getByUserId(req.user!.id);
+    res.json({ agents });
+  } catch (err) {
+    next(err);
+  }
+});
+
+apiRouter.post('/search-agents', authMiddleware, async (req: AuthenticatedRequest, res, next) => {
+  try {
+    const agent = await searchAgentRepository.create(req.user!.id, req.body);
+    // If there's already an active search loop, it will pick this up on its next cycle.
+    // Or we could trigger it immediately!
+    queueService.enqueueJob(req.user!.id, 'job_search_agent', {
+      roles: agent.roles.join(', '),
+      location: agent.location,
+      mode: agent.mode,
+      seniority: agent.seniority.join(', ')
+    }, 'manual').catch(e => console.error("Agent init failed", e));
+    res.json({ agent });
+  } catch (err) {
+    next(err);
+  }
+});
+
+apiRouter.delete('/search-agents/:id', authMiddleware, async (req: AuthenticatedRequest, res, next) => {
+  try {
+    await searchAgentRepository.delete(req.params.id, req.user!.id);
+    res.json({ success: true });
+  } catch (err) {
+    next(err);
+  }
+});
+

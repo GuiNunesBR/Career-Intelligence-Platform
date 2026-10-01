@@ -39,7 +39,7 @@ export async function parseJobText(rawText: string): Promise<Omit<Job, 'id' | 'u
     try {
       const response = await withTimeout(
         ai.models.generateContent({
-          model: 'gemini-3.8-flash',
+          model: 'gemini-2.5-flash',
           contents: `You are an expert career intelligence parser. Extract structured job details from the following posting text:
 
 --- JOB POSTING ---
@@ -209,7 +209,7 @@ export async function performEvidenceFitAnalysis(
     try {
       const response = await withTimeout(
         ai.models.generateContent({
-          model: 'gemini-3.8-flash',
+          model: 'gemini-2.5-flash',
           contents: `You are the core intelligence engine of Career Lake.
 Your task is to conduct an Evidence-First Job Fit Analysis.
 
@@ -480,14 +480,16 @@ Produce a JSON output matching the required schema.`,
 export async function generateTailoredCVContent(
   careerLake: UserCareerLake,
   job: Job,
-  mode: TailoringMode
+  mode: TailoringMode,
+  language: string = 'pt-br'
 ): Promise<Omit<TailoredCV, 'id' | 'userId' | 'createdAt'>> {
   if (ai) {
     try {
       const response = await withTimeout(
         ai.models.generateContent({
-          model: 'gemini-3.8-flash',
+          model: 'gemini-2.5-flash',
           contents: `You are the Career Lake Tailoring Engine.
+You are the Career Lake Tailoring Engine.
 Generate a tailored CV view for this specific job posting.
 
 TAILORING PRINCIPLES:
@@ -497,6 +499,7 @@ TAILORING PRINCIPLES:
    - 'aggressive': Emphasizes transferable skills and high-impact metrics to bridge gaps, BUT NEVER invents facts, tools, or domain experience.
 2. Every experience bullet MUST correspond to actual Career Lake evidence or project outcomes.
 3. Include an "honestyAuditNotes" array explaining how each section is grounded in verified Career Lake data.
+4. Output language MUST be: ${language}. Translate the content correctly.
 
 Career Lake:
 ${JSON.stringify(careerLake, null, 2)}
@@ -653,3 +656,116 @@ ${careerLake.profile.headline.split('|')[0].trim() || 'Applicant'}`;
     groundedFacts,
   };
 }
+
+export async function parseResumeToLake(rawText: string): Promise<any> {
+  if (ai) {
+    try {
+      const response = await withTimeout(
+        ai.models.generateContent({
+          model: 'gemini-2.5-flash',
+          contents: `You are an expert ATS parser and career intelligence system.
+Extract the following information from this resume text into a highly structured JSON format.
+
+Resume Text:
+${rawText}
+
+Return a JSON object with:
+- profile: { headline: string, summary: string, location: string, targetRoles: string[], education: { degree: string, field: string, institution: string, year: string }[], languages: string[] }
+- experiences: array of { company: string, title: string, startDate: string, endDate: string, isCurrent: boolean, employmentType: string, domain: string, location: string, description: string }
+- skills: array of { name: string, category: "Functional" | "Domain" | "Technical" | "Leadership" | "Tool" | "Language", proficiency: "Fundamental" | "Competent" | "Advanced" | "Expert", yearsExperience: number }
+`,
+          config: {
+            responseMimeType: 'application/json',
+            responseSchema: {
+              type: Type.OBJECT,
+              properties: {
+                profile: {
+                  type: Type.OBJECT,
+                  properties: {
+                    headline: { type: Type.STRING },
+                    summary: { type: Type.STRING },
+                    location: { type: Type.STRING },
+                    targetRoles: { type: Type.ARRAY, items: { type: Type.STRING } },
+                    education: {
+                      type: Type.ARRAY,
+                      items: {
+                        type: Type.OBJECT,
+                        properties: {
+                          degree: { type: Type.STRING },
+                          field: { type: Type.STRING },
+                          institution: { type: Type.STRING },
+                          year: { type: Type.STRING }
+                        }
+                      }
+                    },
+                    languages: { type: Type.ARRAY, items: { type: Type.STRING } }
+                  }
+                },
+                experiences: {
+                  type: Type.ARRAY,
+                  items: {
+                    type: Type.OBJECT,
+                    properties: {
+                      company: { type: Type.STRING },
+                      title: { type: Type.STRING },
+                      startDate: { type: Type.STRING },
+                      endDate: { type: Type.STRING },
+                      isCurrent: { type: Type.BOOLEAN },
+                      employmentType: { type: Type.STRING },
+                      domain: { type: Type.STRING },
+                      location: { type: Type.STRING },
+                      description: { type: Type.STRING }
+                    }
+                  }
+                },
+                skills: {
+                  type: Type.ARRAY,
+                  items: {
+                    type: Type.OBJECT,
+                    properties: {
+                      name: { type: Type.STRING },
+                      category: { type: Type.STRING },
+                      proficiency: { type: Type.STRING },
+                      yearsExperience: { type: Type.INTEGER }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        })
+      );
+      
+      if (response.text) {
+        return JSON.parse(response.text.trim());
+      }
+    } catch (err) {
+      console.warn("Gemini parseResumeToLake error:", err);
+    }
+  }
+  
+  // Fallback
+  return {
+    profile: {
+      headline: "Profissional",
+      summary: "Extraído do CV.",
+      location: "Brasil",
+      targetRoles: ["Analista", "Especialista"],
+      education: [],
+      languages: ["Português"]
+    },
+    experiences: [{
+      company: "Empresa",
+      title: "Cargo",
+      startDate: "2020-01",
+      endDate: "2023-01",
+      isCurrent: false,
+      employmentType: "full-time",
+      domain: "General",
+      location: "Remote",
+      description: "Conteúdo bruto extraído: " + rawText.slice(0, 100)
+    }],
+    skills: []
+  };
+}
+

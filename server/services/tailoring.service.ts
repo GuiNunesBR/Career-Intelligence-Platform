@@ -21,7 +21,7 @@ export class TailoringService {
     return this.tailoringRepo.getCoverLetterForJob(userId, jobId);
   }
 
-  async generateTailoredCV(userId: string, jobId: string, mode: TailoringMode): Promise<TailoredCV> {
+  async generateTailoredCV(userId: string, jobId: string, mode: TailoringMode, language?: string): Promise<TailoredCV> {
     if (!userId) throw new Error('User ID is required');
     const job = await this.jobRepo.getJobById(userId, jobId);
     if (!job) {
@@ -32,7 +32,7 @@ export class TailoringService {
     }
 
     const lake = await this.lakeRepo.getUserLake(userId);
-    const rawCvData = await this.ai.tailorCV(lake, job, mode);
+    const rawCvData = await this.ai.tailorCV(lake, job, mode, language);
 
     // 1. Rigorous AI Output Schema Validation
     const parsedCV = TailoringCVAIOutputSchema.parse(rawCvData);

@@ -20,14 +20,14 @@ import { JobAnalyzerView } from './components/JobAnalyzerView.js';
 import { FitAnalysisView } from './components/FitAnalysisView.js';
 import { TailoringView } from './components/TailoringView.js';
 import { ApplicationsView } from './components/ApplicationsView.js';
-import { BackgroundJobsView } from './components/BackgroundJobsView.js';
+import { JobSearchView } from './components/JobSearchView.js';
 import { NewUserModal } from './components/NewUserModal.js';
 import { CheckCircle2, AlertCircle } from 'lucide-react';
 
 export default function App() {
   const [allUsers, setAllUsers] = useState<User[]>([]);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
-  const [activeTab, setActiveTab] = useState<string>('dashboard');
+  const [activeTab, setActiveTab] = useState<string>('lake');
   const [isSyncing, setIsSyncing] = useState<boolean>(false);
 
   // User Isolated Data
@@ -35,7 +35,6 @@ export default function App() {
   const [jobs, setJobs] = useState<Job[]>([]);
   const [applications, setApplications] = useState<Application[]>([]);
   const [backgroundJobs, setBackgroundJobs] = useState<BackgroundJob[]>([]);
-  const [automations, setAutomations] = useState<UserAutomation[]>([]);
 
   // Selected Job for Deep Analysis & Tailoring
   const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
@@ -121,7 +120,7 @@ export default function App() {
 
   // Poll background jobs periodically if any is running/queued
   useEffect(() => {
-    const hasActiveBgJobs = backgroundJobs.some(
+    const hasActiveBgJobs = (backgroundJobs || []).some(
       (j) => j.status === 'queued' || j.status === 'running'
     );
     if (!hasActiveBgJobs) return;
@@ -129,7 +128,12 @@ export default function App() {
     const interval = setInterval(async () => {
       try {
         const { backgroundJobs: updatedBgJobs } = await api.getBackgroundJobs();
-        setBackgroundJobs(updatedBgJobs);
+        setBackgroundJobs((prev) => {
+          const newJobs = updatedBgJobs || [];
+          const changed = newJobs.length !== prev.length || 
+            newJobs.some((j, i) => prev[i] && j.status !== prev[i].status);
+          return changed ? newJobs : prev;
+        });
       } catch (err) {
         console.error(err);
       }
@@ -154,11 +158,10 @@ export default function App() {
       setJobs(jobsRes.jobs);
       setApplications(appsRes.applications);
       setBackgroundJobs(bgRes.backgroundJobs);
-      setAutomations(autoRes.automations || []);
 
       // Pre-select first job if exists
-      if (jobsRes.jobs.length > 0 && !selectedJobId) {
-        const firstJob = jobsRes.jobs[0];
+      if ((jobsRes.jobs || []).length > 0 && !selectedJobId) {
+        const firstJob = (jobsRes.jobs || [])[0];
         setSelectedJobId(firstJob.id);
         loadJobArtifacts(firstJob.id);
       }
@@ -199,7 +202,7 @@ export default function App() {
       setCurrentAnalysis(null);
       setCurrentCV(null);
       setCoverLetter(null);
-      setActiveTab('dashboard');
+      setActiveTab('lake');
       await loadUserData(user.id);
       showToast(`Sessão alterada para ${user.name} (${user.currentRole})`);
     } catch (err: any) {
@@ -214,7 +217,6 @@ export default function App() {
     setJobs([]);
     setApplications([]);
     setBackgroundJobs([]);
-    setAutomations([]);
     showToast('Sessão encerrada com sucesso.');
   };
 
@@ -229,7 +231,7 @@ export default function App() {
     setCurrentAnalysis(null);
     setCurrentCV(null);
     setCoverLetter(null);
-    setActiveTab('dashboard');
+    setActiveTab('lake');
     await loadUserData(user.id);
     showToast(`Conta criada com sucesso para ${user.name}!`);
   };
@@ -265,6 +267,34 @@ export default function App() {
       setLake({ ...lake, evidences: [res.evidence, ...lake.evidences] });
     }
     showToast('Evidência auditada registrada com sucesso!');
+  };
+
+  const handleUploadCV = async (file: File) => {
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      
+      const response = await fetch('/api/lake/upload-cv', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${getStoredToken()}`,
+        },
+        body: formData,
+      });
+      
+      if (!response.ok) throw new Error('Upload failed');
+      const data = await response.json();
+      console.log('Upload successful:', data);
+      
+      // Refresh career lake
+      if (currentUser) {
+        await loadUserData(currentUser.id);
+        showToast('Currículo processado e dados importados com sucesso!');
+      }
+    } catch (err) {
+      console.error(err);
+      showToast('Falha ao processar currículo', 'error');
+    }
   };
 
   // Job Analysis Actions
@@ -305,7 +335,7 @@ export default function App() {
       setBackgroundJobs((prev) => [backgroundJob, ...prev]);
 
       showToast(`Análise de "${job.title}" enviada para a fila de segundo plano!`, 'info');
-      setActiveTab('worker');
+      setActiveTab('job_search');
     } finally {
       setIsAnalyzingJob(false);
     }
@@ -323,10 +353,10 @@ export default function App() {
   };
 
   // Tailoring Actions
-  const handleGenerateCV = async (jobId: string, mode: TailoringMode) => {
+  const handleGenerateCV = async (jobId: string, mode: TailoringMode, language?: string) => {
     setIsGeneratingCV(true);
     try {
-      const { cv } = await api.generateCV(jobId, mode);
+      const { cv } = await api.generateCV(jobId, mode, language);
       setCurrentCV(cv);
       showToast(`CV gerado no modo ${mode.toUpperCase()} com proveniência auditável!`);
     } finally {
@@ -398,65 +428,25 @@ export default function App() {
     showToast('Candidatura removida.');
   };
 
-  // Background Worker Actions
   const handleTriggerBackgroundJob = async (jobType: string, payload?: any) => {
     const { backgroundJob } = await api.enqueueBackgroundJob(jobType, payload);
     setBackgroundJobs((prev) => [backgroundJob, ...prev]);
     showToast(`Tarefa "${jobType}" adicionada à fila assíncrona!`);
   };
 
-  const handleCancelBackgroundJob = async (jobId: string) => {
-    try {
-      await api.cancelBackgroundJob(jobId);
-      const { backgroundJobs: fresh } = await api.getBackgroundJobs();
-      setBackgroundJobs(fresh);
-      showToast('Tarefa cancelada com sucesso.');
-    } catch (err: any) {
-      showToast(err.message || 'Erro ao cancelar tarefa', 'error');
-    }
-  };
-
-  const handleRetryBackgroundJob = async (jobId: string) => {
-    try {
-      await api.retryBackgroundJob(jobId);
-      const { backgroundJobs: fresh } = await api.getBackgroundJobs();
-      setBackgroundJobs(fresh);
-      showToast('Tarefa reenfileirada para nova tentativa.');
-    } catch (err: any) {
-      showToast(err.message || 'Erro ao reexecutar tarefa', 'error');
-    }
-  };
-
-  const handleToggleAutomation = async (id: string, enabled: boolean) => {
-    try {
-      const { automation } = await api.updateAutomation(id, { enabled });
-      setAutomations((prev) => prev.map((a) => (a.id === id ? automation : a)));
-      showToast(`Automação ${enabled ? 'ativada' : 'desativada'} com sucesso.`);
-    } catch (err: any) {
-      showToast(err.message || 'Erro ao alterar automação', 'error');
-    }
-  };
-
-  const handleTriggerAutomation = async (id: string) => {
-    try {
-      const { automation } = await api.triggerAutomation(id);
-      setAutomations((prev) => prev.map((a) => (a.id === id ? automation : a)));
-      const { backgroundJobs: fresh } = await api.getBackgroundJobs();
-      setBackgroundJobs(fresh);
-      showToast('Automação disparada com chave determinística de idempotência.');
-    } catch (err: any) {
-      showToast(err.message || 'Erro ao disparar automação', 'error');
-    }
-  };
-
   const handleRunAudit = () => {
     handleTriggerBackgroundJob('evidence_audit');
-    setActiveTab('worker');
+    setActiveTab('job_search');
   };
 
   const handleTriggerNightWorker = () => {
     handleTriggerBackgroundJob('nightly_analysis');
-    setActiveTab('worker');
+    setActiveTab('job_search');
+  };
+
+  const handleTriggerJobSearch = () => {
+    handleTriggerBackgroundJob('job_search_agent');
+    setActiveTab('job_search');
   };
 
   // Navigation router
@@ -468,7 +458,7 @@ export default function App() {
     setActiveTab(tab);
   };
 
-  const selectedJob = jobs.find((j) => j.id === selectedJobId) || jobs[0] || null;
+  const selectedJob = (jobs || []).find((j) => j.id === selectedJobId) || (jobs || [])[0] || null;
 
   return (
     <div className="min-h-screen bg-neutral-100/70 text-neutral-900 font-sans antialiased pb-16">
@@ -601,6 +591,7 @@ export default function App() {
                 onNavigate={handleNavigate}
                 onRunAudit={handleRunAudit}
                 onTriggerNightWorker={handleTriggerNightWorker}
+                onTriggerJobSearch={handleTriggerJobSearch}
               />
             )}
 
@@ -612,6 +603,7 @@ export default function App() {
                 onAddSkill={handleAddSkill}
                 onAddEvidence={handleAddEvidence}
                 onRunAudit={handleRunAudit}
+                onUploadCV={handleUploadCV}
               />
             )}
 
@@ -681,24 +673,19 @@ export default function App() {
               />
             )}
 
-            {activeTab === 'worker' && (
-              <BackgroundJobsView
+            {activeTab === 'job_search' && (
+              <JobSearchView
                 jobs={backgroundJobs}
-                automations={automations}
                 onTriggerJob={handleTriggerBackgroundJob}
-                onCancelJob={handleCancelBackgroundJob}
-                onRetryJob={handleRetryBackgroundJob}
-                onToggleAutomation={handleToggleAutomation}
-                onTriggerAutomation={handleTriggerAutomation}
                 onRefresh={async () => {
-                  const [freshBg, freshAuto] = await Promise.all([
-                    api.getBackgroundJobs(),
-                    api.getAutomations(),
+                  const [freshBg] = await Promise.all([
+                    api.getBackgroundJobs()
                   ]);
                   setBackgroundJobs(freshBg.backgroundJobs);
-                  setAutomations(freshAuto.automations || []);
                 }}
                 userId={currentUser.id}
+                onNavigate={handleNavigate}
+                onSaveAsApplication={handleSaveAsApplication}
               />
             )}
           </>

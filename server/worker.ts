@@ -5,6 +5,7 @@ import {
   analysisRepository,
   aiService
 } from './container.js';
+import { jobScraperService } from './services/job-scraper.service.js';
 import { BackgroundJob } from '../src/shared/types.js';
 
 const MAX_RETRIES = 3;
@@ -42,7 +43,7 @@ export class BackgroundWorker {
     try {
       const allPending = await jobQueueRepository.getAllPendingJobs();
       const readyJobs = allPending.filter(
-        (j) =>
+        (j: BackgroundJob) =>
           (j.status === 'queued' || j.status === 'pending') &&
           new Date(j.scheduledAt).getTime() <= Date.now()
       );
@@ -133,6 +134,57 @@ export class BackgroundWorker {
         job.finishedAt = new Date().toISOString();
         job.result = { tailoredStatus: 'up_to_date' };
         job.logs.push(`[${new Date().toISOString()}] Scheduled tailoring background process completed.`);
+      } else if (job.jobType === 'job_search_agent') {
+        job.progress = 20;
+        job.logs.push(`[${new Date().toISOString()}] Started Job Search Agent for user ${userId}.`);
+        await jobQueueRepository.saveBackgroundJob(userId, job);
+        
+        job.logs.push(`[${new Date().toISOString()}] Searching external job boards...`);
+        job.progress = 40;
+        await jobQueueRepository.saveBackgroundJob(userId, job);
+
+        await new Promise(r => setTimeout(r, 2000));
+        
+        const roles = job.payload?.roles || 'Software Engineer';
+        const location = job.payload?.location || 'Anywhere';
+        const mode = job.payload?.mode || 'Remote';
+        
+        job.logs.push(`[${new Date().toISOString()}] Searching for: ${roles} | Location: ${location} | Mode: ${mode}`);
+        await jobQueueRepository.saveBackgroundJob(userId, job);
+        
+        // Use external API (RapidAPI JSearch) to find real jobs
+        const scrapedJobs = await jobScraperService.searchJobs(roles, location, mode);
+        job.logs.push(`[${new Date().toISOString()}] Encontradas ${scrapedJobs.length} vagas. Iniciando processamento de IA...`);
+        await jobQueueRepository.saveBackgroundJob(userId, job);
+        
+        let processed = 0;
+        for (const mJob of scrapedJobs) {
+          const parsed = await aiService.parseJob(mJob.rawText);
+          const savedJob = await jobRepository.createJob(userId, {
+            ...mJob,
+            requirements: parsed.requirements
+          });
+          
+          job.logs.push(`[${new Date().toISOString()}] Found: "${savedJob.title}" at ${savedJob.company}. Running Fit Analysis...`);
+          await jobQueueRepository.saveBackgroundJob(userId, job);
+          
+          const analysisData = await aiService.analyzeFit(lake, savedJob);
+          await analysisRepository.saveAnalysis(userId, {
+            ...analysisData,
+            id: `fit_${Date.now()}_${savedJob.id}`,
+            userId,
+            jobId: savedJob.id,
+            createdAt: new Date().toISOString()
+          });
+          processed++;
+          job.progress = 40 + (processed * 25);
+        }
+        
+        job.status = 'completed';
+        job.progress = 100;
+        job.finishedAt = new Date().toISOString();
+        job.result = { jobsFound: processed, status: 'success' };
+        job.logs.push(`[${new Date().toISOString()}] Job Search completed successfully.`);
         await jobQueueRepository.saveBackgroundJob(userId, job);
       } else {
         job.status = 'completed';

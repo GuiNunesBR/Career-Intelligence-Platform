@@ -3,6 +3,7 @@ import {
   performEvidenceFitAnalysis,
   generateTailoredCVContent,
   generateCoverLetterContent,
+  parseResumeToLake
 } from '../ai.js';
 import { JobParsingAIOutputSchema } from '../validation/ai_schemas.js';
 import {
@@ -29,6 +30,10 @@ export class AIService {
         evidenceRequired: r.evidenceRequired,
       })),
     };
+  }
+
+  async parseResumeToLake(rawText: string): Promise<any> {
+    return parseResumeToLake(rawText);
   }
 
   async analyzeFit(lake: UserCareerLake, job: Job): Promise<Omit<FitAnalysis, 'id' | 'userId' | 'createdAt'>> {
