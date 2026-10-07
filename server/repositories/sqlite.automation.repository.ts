@@ -2,7 +2,7 @@ import { eq, and } from 'drizzle-orm';
 import { IAutomationRepository } from './interfaces.js';
 import { UserAutomation, AutomationType, AutomationSchedule } from '../../src/shared/types.js';
 import { db } from '../db/index.js';
-import { userAutomations } from '../db/schema.js';
+import { userAutomations, backgroundJobs } from '../db/schema.js';
 
 export class SqliteAutomationRepository implements IAutomationRepository {
   async getAutomations(userId: string): Promise<UserAutomation[]> {
@@ -10,7 +10,8 @@ export class SqliteAutomationRepository implements IAutomationRepository {
     return result.map(a => ({
       ...a,
       type: a.type as AutomationType,
-      schedule: a.schedule as AutomationSchedule,
+      enabled: a.enabled === 1,
+      schedule: (typeof a.schedule === 'string' ? JSON.parse(a.schedule) : a.schedule) as AutomationSchedule,
       nextRunAt: a.nextRunAt,
       lastRunAt: a.lastRunAt || undefined,
       createdAt: a.createdAt,
@@ -25,7 +26,8 @@ export class SqliteAutomationRepository implements IAutomationRepository {
     return {
       ...a,
       type: a.type as AutomationType,
-      schedule: a.schedule as AutomationSchedule,
+      enabled: a.enabled === 1,
+      schedule: (typeof a.schedule === 'string' ? JSON.parse(a.schedule) : a.schedule) as AutomationSchedule,
       nextRunAt: a.nextRunAt,
       lastRunAt: a.lastRunAt || undefined,
       createdAt: a.createdAt,
@@ -38,37 +40,45 @@ export class SqliteAutomationRepository implements IAutomationRepository {
     if (existing) {
       const [updated] = await db.update(userAutomations).set({
         type: automation.type,
-        enabled: automation.enabled,
-        schedule: automation.schedule,
-        nextRunAt: new Date(automation.nextRunAt),
-        lastRunAt: automation.lastRunAt ? new Date(automation.lastRunAt) : null,
+        enabled: automation.enabled ? 1 : 0,
+        schedule: JSON.stringify(automation.schedule),
+        nextRunAt: new Date(automation.nextRunAt).toISOString(),
+        lastRunAt: automation.lastRunAt ? new Date(automation.lastRunAt).toISOString() : null,
         updatedAt: new Date().toISOString(),
       }).where(and(eq(userAutomations.userId, userId), eq(userAutomations.id, automation.id))).returning();
       
       return {
         ...updated,
         type: updated.type as AutomationType,
-        schedule: updated.schedule as AutomationSchedule,
+        enabled: updated.enabled === 1,
+        schedule: (typeof updated.schedule === 'string' ? JSON.parse(updated.schedule) : updated.schedule) as AutomationSchedule,
         nextRunAt: updated.nextRunAt,
         lastRunAt: updated.lastRunAt || undefined,
         createdAt: updated.createdAt,
         updatedAt: updated.updatedAt,
       };
     } else {
-      const [inserted] = await db.insert(userAutomations).values({
-        id: automation.id,
-        userId,
-        type: automation.type,
-        enabled: automation.enabled,
-        schedule: automation.schedule,
-        nextRunAt: new Date(automation.nextRunAt),
-        lastRunAt: automation.lastRunAt ? new Date(automation.lastRunAt) : null,
-      }).returning();
+      let inserted;
+      try {
+        [inserted] = await db.insert(userAutomations).values({
+          id: automation.id,
+          userId,
+          type: automation.type,
+          enabled: automation.enabled ? 1 : 0,
+          schedule: JSON.stringify(automation.schedule),
+          nextRunAt: new Date(automation.nextRunAt).toISOString(),
+          lastRunAt: automation.lastRunAt ? new Date(automation.lastRunAt).toISOString() : null,
+        }).returning();
+      } catch (e: any) {
+        console.error('Detailed saveAutomation error:', e.message, e.cause);
+        throw e;
+      }
       
       return {
         ...inserted,
         type: inserted.type as AutomationType,
-        schedule: inserted.schedule as AutomationSchedule,
+        enabled: inserted.enabled === 1,
+        schedule: (typeof inserted.schedule === 'string' ? JSON.parse(inserted.schedule) : inserted.schedule) as AutomationSchedule,
         nextRunAt: inserted.nextRunAt,
         lastRunAt: inserted.lastRunAt || undefined,
         createdAt: inserted.createdAt,
@@ -78,16 +88,22 @@ export class SqliteAutomationRepository implements IAutomationRepository {
   }
 
   async deleteAutomation(userId: string, id: string): Promise<boolean> {
-    const result = await db.delete(userAutomations).where(and(eq(userAutomations.userId, userId), eq(userAutomations.id, id))).returning({ id: userAutomations.id });
-    return result.length > 0;
+    // SQLite doesn't support partial SET NULL on composite FKs, so we do it manually
+    await db.update(backgroundJobs)
+      .set({ automationId: null })
+      .where(and(eq(backgroundJobs.userId, userId), eq(backgroundJobs.automationId, id)));
+      
+    const result = await db.delete(userAutomations).where(and(eq(userAutomations.userId, userId), eq(userAutomations.id, id)));
+    return true;
   }
 
   async getAllActiveAutomations(): Promise<UserAutomation[]> {
-    const result = await db.select().from(userAutomations).where(eq(userAutomations.enabled, true));
+    const result = await db.select().from(userAutomations).where(eq(userAutomations.enabled, 1));
     return result.map(a => ({
       ...a,
       type: a.type as AutomationType,
-      schedule: a.schedule as AutomationSchedule,
+      enabled: a.enabled === 1,
+      schedule: (typeof a.schedule === 'string' ? JSON.parse(a.schedule) : a.schedule) as AutomationSchedule,
       nextRunAt: a.nextRunAt,
       lastRunAt: a.lastRunAt || undefined,
       createdAt: a.createdAt,

@@ -27,7 +27,7 @@ export const JobSearchView: React.FC<JobSearchViewProps> = ({
   const [roles, setRoles] = useState('');
   const [seniorities, setSeniorities] = useState<string[]>([]);
   const [location, setLocation] = useState('');
-  const [mode, setMode] = useState('');
+  const [modes, setModes] = useState<string[]>([]);
   const [frequency, setFrequency] = useState('manual');
   
   const [isTriggering, setIsTriggering] = useState(false);
@@ -92,7 +92,7 @@ export const JobSearchView: React.FC<JobSearchViewProps> = ({
         roles: roles.split(',').map(r => r.trim()).filter(Boolean),
         seniority: seniorities,
         location,
-        mode,
+        mode: modes.join(','),
         frequency
       });
       await fetchAgents();
@@ -114,6 +114,10 @@ export const JobSearchView: React.FC<JobSearchViewProps> = ({
 
   const toggleSeniority = (s: string) => {
     setSeniorities(prev => prev.includes(s) ? prev.filter(x => x !== s) : [...prev, s]);
+  };
+
+  const toggleMode = (m: string) => {
+    setModes(prev => prev.includes(m) ? prev.filter(x => x !== m) : [...prev, m]);
   };
 
   return (
@@ -157,9 +161,20 @@ export const JobSearchView: React.FC<JobSearchViewProps> = ({
                   {(agent.location || agent.mode) && (
                     <p><span className="font-semibold">Local:</span> {[agent.mode, agent.location].filter(Boolean).join(' - ')}</p>
                   )}
-                  <p className="mt-2 text-[10px] text-emerald-600 font-medium bg-emerald-50 px-1 py-0.5 rounded inline-block">
-                    {agent.frequency === 'manual' ? 'Execução Manual' : `A cada ${agent.frequency}`}
-                  </p>
+                  <button 
+                    onClick={() => {
+                      onTriggerJob('job_search_agent', {
+                        roles: agent.roles.join(', '),
+                        location: agent.location,
+                        mode: agent.mode,
+                        seniority: agent.seniority.join(', ')
+                      });
+                    }}
+                    disabled={isSearchRunning}
+                    className="mt-2 text-[10px] text-emerald-600 font-medium bg-emerald-50 hover:bg-emerald-100 px-2 py-1 rounded inline-flex items-center cursor-pointer transition-colors disabled:opacity-50"
+                  >
+                    {isSearchRunning ? 'Buscando...' : '▶ Executar Busca Agora'}
+                  </button>
                 </div>
               </div>
             ))}
@@ -208,27 +223,28 @@ export const JobSearchView: React.FC<JobSearchViewProps> = ({
               </div>
 
               <div>
-                <label className="block mb-1">Localização (opcional)</label>
+                <label className="block mb-1">Localização (opcional, até 3 estados separados por vírgula)</label>
                 <input 
                   type="text" 
-                  placeholder="Ex: São Paulo, SP ou Remoto" 
+                  placeholder="Ex: SP, RJ, MG" 
                   className="w-full border border-neutral-300 rounded p-2 focus:ring-1 focus:ring-neutral-900 bg-white"
                   value={location}
                   onChange={e => setLocation(e.target.value)}
                 />
               </div>
               <div>
-                <label className="block mb-1">Modalidade (opcional)</label>
-                <select 
-                  className="w-full border border-neutral-300 rounded p-2 bg-white focus:ring-1 focus:ring-neutral-900"
-                  value={mode}
-                  onChange={e => setMode(e.target.value)}
-                >
-                  <option value="">Qualquer modalidade</option>
-                  <option value="Remote">Remoto</option>
-                  <option value="Hybrid">Híbrido</option>
-                  <option value="On-site">Presencial</option>
-                </select>
+                <label className="block mb-1">Modalidades (até 3 opções)</label>
+                <div className="flex flex-wrap gap-2">
+                  {['Remote', 'Hybrid', 'On-site'].map(m => (
+                    <button
+                      key={m}
+                      onClick={() => toggleMode(m)}
+                      className={`px-2 py-1 rounded border text-xs ${modes.includes(m) ? 'bg-neutral-900 text-white border-neutral-900' : 'bg-white border-neutral-300 text-neutral-600 hover:border-neutral-400'}`}
+                    >
+                      {m === 'Remote' ? 'Remoto' : m === 'Hybrid' ? 'Híbrido' : 'Presencial'}
+                    </button>
+                  ))}
+                </div>
               </div>
               <div>
                 <label className="block mb-1">Frequência de Busca</label>

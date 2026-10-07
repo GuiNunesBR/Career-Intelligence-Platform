@@ -12,10 +12,13 @@ import {
   Database,
   Plus,
   Search,
-  FileText,
   Briefcase,
   Layers,
   Award,
+  Edit2,
+  Trash2,
+  Globe,
+  FileText
   } from 'lucide-react';
 
 interface CareerLakeViewProps {
@@ -37,7 +40,7 @@ export const CareerLakeView: React.FC<CareerLakeViewProps> = ({
   onRunAudit,
   onUploadCV,
 }) => {
-  const [activeTab, setActiveTab] = useState<'evidences' | 'experiences' | 'projects' | 'skills' | 'profile'>('profile');
+  const [activeTab, setActiveTab] = useState<'evidences' | 'experiences' | 'projects' | 'skills' | 'languages' | 'profile'>('profile');
   const [isUploading, setIsUploading] = useState(false);
   const [evidenceFilter, setEvidenceFilter] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
@@ -173,7 +176,7 @@ export const CareerLakeView: React.FC<CareerLakeViewProps> = ({
           </div>
 
           <div className="flex items-center gap-2 shrink-0">
-            <label className={`px-3.5 py-2 text-xs font-semibold text-white bg-blue-600 rounded-md hover:bg-blue-700 transition-colors flex items-center gap-1.5 cursor-pointer ${isUploading ? 'opacity-50 cursor-not-allowed' : ''}`}>
+            <label className={`px-3.5 py-2 text-xs font-semibold text-white bg-blue-600 rounded-md hover:bg-blue-700 transition-colors flex items-center gap-1.5 cursor-pointer ${isUploading ? 'opacity-50 pointer-events-none' : ''}`}>
               <Plus className="w-3.5 h-3.5" /> {isUploading ? 'Analisando...' : 'Carregar CV (PDF)'}
               <input type="file" accept=".pdf,.docx" className="hidden" onChange={handleFileUpload} disabled={isUploading} />
             </label>
@@ -182,12 +185,6 @@ export const CareerLakeView: React.FC<CareerLakeViewProps> = ({
               className="px-3.5 py-2 text-xs font-semibold text-white bg-neutral-900 rounded-md hover:bg-neutral-800 transition-colors flex items-center gap-1.5"
             >
               <Plus className="w-3.5 h-3.5" /> Adicionar Evidência
-            </button>
-            <button
-              onClick={onRunAudit}
-              className="px-3.5 py-2 text-xs font-medium text-neutral-700 bg-neutral-50 border border-neutral-300 rounded-md hover:bg-neutral-100 transition-colors"
-            >
-              Auditar Integridade
             </button>
           </div>
         </div>
@@ -203,7 +200,7 @@ export const CareerLakeView: React.FC<CareerLakeViewProps> = ({
             }`}
           >
             <Database className="w-3.5 h-3.5" />
-            <span>Banco de Evidências ({lake.evidences.length})</span>
+            <span>Banco de Evidências ({(lake?.evidences || []).length})</span>
           </button>
 
           <button
@@ -215,7 +212,7 @@ export const CareerLakeView: React.FC<CareerLakeViewProps> = ({
             }`}
           >
             <Briefcase className="w-3.5 h-3.5" />
-            <span>Experiências ({lake.experiences.length})</span>
+            <span>Experiências ({(lake?.experiences || []).length})</span>
           </button>
 
           <button
@@ -227,7 +224,7 @@ export const CareerLakeView: React.FC<CareerLakeViewProps> = ({
             }`}
           >
             <Layers className="w-3.5 h-3.5" />
-            <span>Projetos & Escopos ({lake.projects.length})</span>
+            <span>Projetos & Escopos ({(lake?.projects || []).length})</span>
           </button>
 
           <button
@@ -239,7 +236,19 @@ export const CareerLakeView: React.FC<CareerLakeViewProps> = ({
             }`}
           >
             <Award className="w-3.5 h-3.5" />
-            <span>Skills ({lake.skills.length})</span>
+            <span>Skills ({(lake?.skills || []).length})</span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('languages')}
+            className={`pb-2.5 px-3 whitespace-nowrap transition-colors flex items-center gap-1.5 ${
+              activeTab === 'languages'
+                ? 'text-neutral-900 border-b-2 border-neutral-900 font-semibold'
+                : 'text-neutral-500 hover:text-neutral-900'
+            }`}
+          >
+            <Globe className="w-3.5 h-3.5" />
+            <span>Idiomas</span>
           </button>
 
           <button
@@ -400,13 +409,23 @@ export const CareerLakeView: React.FC<CareerLakeViewProps> = ({
               const expEvidences = (lake.evidences || []).filter((e) => e.experienceId === exp.id);
               return (
                 <div key={exp.id} className="bg-white border border-neutral-200 rounded-lg p-5">
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
+                  <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-2">
                     <div>
                       <h3 className="text-base font-bold text-neutral-900">{exp.title}</h3>
                       <p className="text-xs text-neutral-600 font-medium">{exp.company} · {exp.location}</p>
                     </div>
-                    <div className="text-xs font-mono text-neutral-500">
-                      {exp.startDate} – {exp.isCurrent ? 'Presente' : exp.endDate}
+                    <div className="flex flex-col items-end gap-2">
+                      <div className="flex gap-2">
+                        <button onClick={() => alert('Edição em desenvolvimento')} className="text-neutral-400 hover:text-blue-600 transition-colors">
+                          <Edit2 className="w-3.5 h-3.5" />
+                        </button>
+                        <button onClick={() => alert('Exclusão em desenvolvimento')} className="text-neutral-400 hover:text-red-600 transition-colors">
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                      <div className="text-xs font-mono text-neutral-500">
+                        {exp.startDate} – {exp.isCurrent ? 'Presente' : exp.endDate}
+                      </div>
                     </div>
                   </div>
 
@@ -431,8 +450,16 @@ export const CareerLakeView: React.FC<CareerLakeViewProps> = ({
           <p className="text-xs text-neutral-500">Iniciativas, entregáveis e orçamentos executados.</p>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {(lake.projects || []).map((proj) => (
-              <div key={proj.id} className="bg-white border border-neutral-200 rounded-lg p-5 space-y-2">
-                <h3 className="text-sm font-bold text-neutral-900">{proj.name}</h3>
+              <div key={proj.id} className="bg-white border border-neutral-200 rounded-lg p-5 space-y-2 relative">
+                <div className="absolute top-4 right-4 flex gap-2">
+                  <button onClick={() => alert('Edição em desenvolvimento')} className="text-neutral-400 hover:text-blue-600 transition-colors">
+                    <Edit2 className="w-3.5 h-3.5" />
+                  </button>
+                  <button onClick={() => alert('Exclusão em desenvolvimento')} className="text-neutral-400 hover:text-red-600 transition-colors">
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+                <h3 className="text-sm font-bold text-neutral-900 pr-12">{proj.name}</h3>
                 <p className="text-xs text-neutral-500">Domínio: {proj.domain}</p>
                 <p className="text-xs text-neutral-700 leading-relaxed">{proj.description}</p>
 
@@ -480,6 +507,7 @@ export const CareerLakeView: React.FC<CareerLakeViewProps> = ({
                   <th className="py-2.5 px-4">Categoria</th>
                   <th className="py-2.5 px-4">Proficiência</th>
                   <th className="py-2.5 px-4 text-right">Anos de Experiência</th>
+                  <th className="py-2.5 px-4 text-right">Ações</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-neutral-100">
@@ -490,6 +518,66 @@ export const CareerLakeView: React.FC<CareerLakeViewProps> = ({
                     <td className="py-3 px-4 text-neutral-800 font-medium">{skill.proficiency}</td>
                     <td className="py-3 px-4 text-right font-mono tabular-nums text-neutral-700">
                       {skill.yearsExperience} anos
+                    </td>
+                    <td className="py-3 px-4 text-right">
+                      <div className="flex justify-end gap-2">
+                        <button onClick={() => alert('Edição em desenvolvimento')} className="text-neutral-400 hover:text-blue-600 transition-colors">
+                          <Edit2 className="w-3.5 h-3.5" />
+                        </button>
+                        <button onClick={() => alert('Exclusão em desenvolvimento')} className="text-neutral-400 hover:text-red-600 transition-colors">
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* TAB 4.5: IDIOMAS */}
+      {activeTab === 'languages' && (
+        <div className="space-y-4">
+          <div className="flex justify-between items-center">
+            <p className="text-xs text-neutral-500">Idiomas extraídos do currículo e organizados por fluência (Formato ATS-friendly).</p>
+            <button
+              onClick={() => alert('Adição em desenvolvimento')}
+              className="px-3 py-1.5 text-xs font-semibold text-white bg-neutral-900 rounded hover:bg-neutral-800 transition-colors flex items-center gap-1"
+            >
+              <Plus className="w-3 h-3" /> Adicionar Idioma
+            </button>
+          </div>
+
+          <div className="bg-white border border-neutral-200 rounded-lg overflow-hidden">
+            <table className="w-full text-left text-xs">
+              <thead className="bg-neutral-50 border-b border-neutral-200 text-neutral-500 uppercase font-semibold text-[10px] tracking-wider">
+                <tr>
+                  <th className="py-2.5 px-4">Idioma</th>
+                  <th className="py-2.5 px-4">Fala</th>
+                  <th className="py-2.5 px-4">Leitura</th>
+                  <th className="py-2.5 px-4">Escrita</th>
+                  <th className="py-2.5 px-4 text-right">Ações</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-neutral-100">
+                {(lake?.profile?.languages || []).length === 0 ? (
+                  <tr>
+                    <td colSpan={5} className="py-8 px-4 text-center text-neutral-500">Nenhum idioma registrado.</td>
+                  </tr>
+                ) : (lake?.profile?.languages || []).map((lang: string, idx: number) => (
+                  <tr key={idx} className="hover:bg-neutral-50 transition-colors">
+                    <td colSpan={4} className="py-3 px-4 font-semibold text-neutral-900">{lang}</td>
+                    <td className="py-3 px-4 text-right">
+                      <div className="flex justify-end gap-2">
+                        <button onClick={() => alert('Edição em desenvolvimento')} className="text-neutral-400 hover:text-blue-600 transition-colors">
+                          <Edit2 className="w-3.5 h-3.5" />
+                        </button>
+                        <button onClick={() => alert('Exclusão em desenvolvimento')} className="text-neutral-400 hover:text-red-600 transition-colors">
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -506,25 +594,25 @@ export const CareerLakeView: React.FC<CareerLakeViewProps> = ({
             <h3 className="text-sm font-semibold text-neutral-900 uppercase tracking-wider mb-2">
               Headline & Sumário Profissional
             </h3>
-            <p className="text-base font-bold text-neutral-900">{lake.profile.headline}</p>
-            <p className="text-xs text-neutral-700 mt-2 leading-relaxed">{lake.profile.summary}</p>
+            <p className="text-base font-bold text-neutral-900">{lake?.profile?.headline || 'Perfil não preenchido'}</p>
+            <p className="text-xs text-neutral-700 mt-2 leading-relaxed">{lake?.profile?.summary || 'Nenhum sumário adicionado.'}</p>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4 border-t border-neutral-100 text-xs">
             <div>
               <span className="text-neutral-500 font-medium">Localização:</span>
-              <p className="text-neutral-900 font-semibold mt-0.5">{lake.profile.location}</p>
+              <p className="text-neutral-900 font-semibold mt-0.5">{lake?.profile?.location || 'Não informado'}</p>
             </div>
             <div>
               <span className="text-neutral-500 font-medium">Cargos Alvo:</span>
-              <p className="text-neutral-900 font-semibold mt-0.5">{(lake.profile.targetRoles || []).join(', ')}</p>
+              <p className="text-neutral-900 font-semibold mt-0.5">{(lake?.profile?.targetRoles || []).join(', ')}</p>
             </div>
           </div>
 
           <div className="pt-4 border-t border-neutral-100">
             <h4 className="text-xs font-semibold text-neutral-700 uppercase tracking-wider mb-2">Formação Acadêmica</h4>
             <div className="space-y-2">
-              {(lake.profile.education || []).map((edu, idx) => (
+              {(lake?.profile?.education || []).map((edu, idx) => (
                 <div key={idx} className="text-xs flex justify-between py-1">
                   <div>
                     <p className="font-semibold text-neutral-900">{edu.degree} — {edu.field}</p>

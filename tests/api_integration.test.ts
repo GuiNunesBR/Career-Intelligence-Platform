@@ -1,6 +1,6 @@
 import assert from 'assert';
 import { app } from '../server/app.js';
-import { db } from '../server/db/postgres.js';
+import { db } from '../server/db/index.js';
 import * as schema from '../server/db/schema.js';
 import { eq } from 'drizzle-orm';
 import http from 'http';

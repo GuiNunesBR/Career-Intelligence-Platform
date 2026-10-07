@@ -46,7 +46,7 @@ export class SqliteApplicationRepository implements IApplicationRepository {
       jobTitle: app.jobTitle,
       company: app.company,
       status: app.status,
-      appliedAt: app.appliedAt ? new Date(app.appliedAt) : null,
+      appliedAt: app.appliedAt || null,
       cvVersionId: app.cvVersionId,
       coverLetterId: app.coverLetterId,
       notes: app.notes,

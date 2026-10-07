@@ -39,7 +39,7 @@ export const careerProfiles = sqliteTable('career_profiles', {
   location: text('location').notNull(),
   targetRoles: text('target_roles', { mode: 'json' }).notNull().$type<string[]>(),
   targetIndustries: text('target_industries', { mode: 'json' }).notNull().$type<string[]>(),
-  languages: text('languages', { mode: 'json' }).notNull().$type<string[]>(),
+  languages: text('languages', { mode: 'json' }).notNull().$type<any[]>(),
   education: text('education', { mode: 'json' }).notNull().$type<any[]>(),
   createdAt: text().default(sql`CURRENT_TIMESTAMP`).notNull(),
   updatedAt: text().default(sql`CURRENT_TIMESTAMP`).notNull()
@@ -296,7 +296,7 @@ export const searchAgents = sqliteTable('search_agents', {
   location: text('location'),
   mode: text('mode'),
   frequency: text('frequency').notNull(), // 'manual', '1h', '3h', 'daily'
-  isActive: integer('is_active', { mode: 'boolean' }).default(1).notNull(),
+  isActive: integer('is_active', { mode: 'boolean' }).default(true).notNull(),
   lastRunAt: text('last_run_at'),
   createdAt: text().default(sql`CURRENT_TIMESTAMP`).notNull(),
   updatedAt: text().default(sql`CURRENT_TIMESTAMP`).notNull()

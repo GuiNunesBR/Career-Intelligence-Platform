@@ -43,6 +43,8 @@ export const apiRouter = express.Router();
 // 1. AUTHENTICATION (Zero fallback, Real tokens)
 // ==========================================
 
+import pdfParse from 'pdf-parse';
+
 apiRouter.get('/auth/users', async (_req, res) => {
   try {
     const users = await authService.getAllUsers();
@@ -110,38 +112,22 @@ apiRouter.post('/lake/upload-cv', authMiddleware, upload.single('file'), async (
     }
     
     // Extract text from PDF
-    const pdfParse = require('pdf-parse');
     const data = await pdfParse(req.file.buffer);
     const rawText = data.text;
     
-    const parsedData = await aiService.parseResumeToLake(rawText);
-    
-    await careerLakeService.updateProfile(req.user!.id, parsedData.profile);
-    
-    for (const exp of parsedData.experiences || []) {
-      await careerLakeService.addExperience(req.user!.id, {
-        title: exp.title || "Cargo",
-        company: exp.company || "Empresa",
-        domain: exp.domain || "General",
-        startDate: exp.startDate || "2020-01",
-        endDate: exp.endDate,
-        isCurrent: exp.isCurrent,
-        location: exp.location || "Remote",
-        employmentType: exp.employmentType || "full-time",
-        description: exp.description || "Descrição ausente."
-      });
-    }
+    const job = await queueService.enqueueJob(
+      req.user!.id,
+      'document_parse',
+      { rawText, fileName: req.file.originalname },
+      undefined,
+      `cv_upload_${Date.now()}`
+    );
 
-    for (const skill of parsedData.skills || []) {
-      await careerLakeService.addSkill(req.user!.id, {
-        name: skill.name,
-        category: skill.category || "Functional",
-        proficiency: skill.proficiency || "Competent",
-        yearsExperience: skill.yearsExperience || 1
-      });
-    }
-
-    res.status(200).json({ success: true, message: 'CV parsed successfully', data: parsedData });
+    res.status(202).json({ 
+      success: true, 
+      message: 'CV uploaded successfully. Processing in background.',
+      jobId: job.id
+    });
   } catch (err) {
     next(err);
   }
@@ -649,7 +635,7 @@ apiRouter.post('/search-agents', authMiddleware, async (req: AuthenticatedReques
       location: agent.location,
       mode: agent.mode,
       seniority: agent.seniority.join(', ')
-    }, 'manual').catch(e => console.error("Agent init failed", e));
+    }).catch(e => console.error("Agent init failed", e));
     res.json({ agent });
   } catch (err) {
     next(err);

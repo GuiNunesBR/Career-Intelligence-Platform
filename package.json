@@ -21,6 +21,7 @@
     "@types/pdf-parse": "^1.1.1",
     "@vitejs/plugin-react": "^6.1.1",
     "bcryptjs": "^3.0.3",
+    "cheerio": "^1.2.0",
     "dotenv": "^17.2.3",
     "drizzle-orm": "^0.45.3",
     "express": "^4.21.2",
