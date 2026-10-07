@@ -1,0 +1,236 @@
+{
+  "profile": {
+    "id": "prof_alex",
+    "userId": "usr_alex_costa",
+    "headline": "Senior Project & Cost Controller | Capex / Opex & Risk Governance",
+    "summary": "Over 12 years of hands-on leadership managing multi-million dollar capital expenditure projects, cost engineering, risk assessment, and executive stakeholder governance in industrial manufacturing and infrastructure.",
+    "location": "São Paulo, SP / Remote",
+    "targetRoles": [
+      "Project Controller Lead",
+      "Senior Project Manager",
+      "Head of Project Governance"
+    ],
+    "targetIndustries": [
+      "Industrial Manufacturing",
+      "Energy",
+      "Capital Projects",
+      "Engineering & Construction"
+    ],
+    "languages": [
+      {
+        "language": "Portuguese",
+        "proficiency": "Native"
+      },
+      {
+        "language": "English",
+        "proficiency": "Full Professional (C1)"
+      },
+      {
+        "language": "Spanish",
+        "proficiency": "Working Professional"
+      }
+    ],
+    "education": [
+      {
+        "degree": "B.S. in Production Engineering",
+        "institution": "Escola Politécnica da USP",
+        "year": "2012",
+        "field": "Engineering"
+      },
+      {
+        "degree": "MBA in Financial Management & Project Control",
+        "institution": "Fundação Getulio Vargas (FGV)",
+        "year": "2016",
+        "field": "Finance & Governance"
+      }
+    ],
+    "createdAt": "2026-10-06T09:02:08.161Z",
+    "updatedAt": "2026-10-06T09:02:08.161Z"
+  },
+  "experiences": [
+    {
+      "id": "exp_alex_1",
+      "userId": "usr_alex_costa",
+      "company": "Nexus Industrial Solutions",
+      "title": "Senior Project & Cost Controller",
+      "startDate": "2020-03",
+      "isCurrent": true,
+      "employmentType": "full-time",
+      "domain": "Heavy Industry & Manufacturing",
+      "location": "São Paulo, Brazil",
+      "description": "Leading full financial governance, Capex forecasting, and project execution tracking for 5 manufacturing plant modernization initiatives.",
+      "createdAt": "2026-10-06T09:02:08.161Z",
+      "updatedAt": "2026-10-06T09:02:08.161Z"
+    },
+    {
+      "id": "exp_alex_2",
+      "userId": "usr_alex_costa",
+      "company": "Vanguard EPC Systems",
+      "title": "Project Controls & Risk Specialist",
+      "startDate": "2015-08",
+      "endDate": "2020-02",
+      "employmentType": "full-time",
+      "domain": "Capital Projects & EPC",
+      "location": "Campinas, Brazil",
+      "description": "Structured project risk management frameworks, baseline schedule control, and subcontractor cost variation audits.",
+      "createdAt": "2026-10-06T09:02:08.161Z",
+      "updatedAt": "2026-10-06T09:02:08.161Z"
+    }
+  ],
+  "projects": [
+    {
+      "id": "proj_alex_1",
+      "userId": "usr_alex_costa",
+      "experienceId": "exp_alex_1",
+      "name": "Plant Expansion Capex Portfolio ($45M)",
+      "description": "Comprehensive budget control, Primavera schedule integration, and monthly executive C-level risk dashboarding for plant expansion.",
+      "domain": "Industrial Automation & Civil Infrastructure",
+      "scope": "$45M Budget, 18-month duration, 14 subcontracted vendors",
+      "technologies": [
+        "SAP CO/PS",
+        "Primavera P6",
+        "Power BI",
+        "Monte Carlo Risk Simulation"
+      ],
+      "metrics": "Delivered 8% under baseline budget ($3.6M saved), 0 fatal HSE incidents, 98% milestone compliance",
+      "createdAt": "2026-10-06T09:02:08.161Z",
+      "updatedAt": "2026-10-06T09:02:08.161Z"
+    },
+    {
+      "id": "proj_alex_2",
+      "userId": "usr_alex_costa",
+      "experienceId": "exp_alex_2",
+      "name": "EPC Change Order Governance Framework",
+      "description": "Standardized contract claim review and quantitative dispute resolution workflow for industrial facilities.",
+      "domain": "Contract Governance & Dispute Prevention",
+      "scope": "8 concurrent industrial build contracts",
+      "technologies": [
+        "SAP PM",
+        "Excel Financial Modeling",
+        "Contract Claim Matrix"
+      ],
+      "metrics": "Prevented $1.2M in ungrounded contractor claims and reduced dispute resolution cycle by 55%",
+      "createdAt": "2026-10-06T09:02:08.161Z",
+      "updatedAt": "2026-10-06T09:02:08.161Z"
+    }
+  ],
+  "skills": [
+    {
+      "id": "sk_1",
+      "userId": "usr_alex_costa",
+      "name": "Project Management",
+      "category": "Functional",
+      "proficiency": "Expert",
+      "yearsExperience": 12
+    },
+    {
+      "id": "sk_2",
+      "userId": "usr_alex_costa",
+      "name": "Cost Control & Engineering",
+      "category": "Functional",
+      "proficiency": "Expert",
+      "yearsExperience": 11
+    },
+    {
+      "id": "sk_3",
+      "userId": "usr_alex_costa",
+      "name": "Risk Analysis & Governance",
+      "category": "Functional",
+      "proficiency": "Expert",
+      "yearsExperience": 10
+    },
+    {
+      "id": "sk_4",
+      "userId": "usr_alex_costa",
+      "name": "C-Level Stakeholder Management",
+      "category": "Leadership",
+      "proficiency": "Expert",
+      "yearsExperience": 9
+    },
+    {
+      "id": "sk_5",
+      "userId": "usr_alex_costa",
+      "name": "Primavera P6",
+      "category": "Tool",
+      "proficiency": "Advanced",
+      "yearsExperience": 8
+    },
+    {
+      "id": "sk_6",
+      "userId": "usr_alex_costa",
+      "name": "SAP PS / CO Modules",
+      "category": "Tool",
+      "proficiency": "Advanced",
+      "yearsExperience": 10
+    },
+    {
+      "id": "sk_7",
+      "userId": "usr_alex_costa",
+      "name": "Contract Negotiations & EPC",
+      "category": "Domain",
+      "proficiency": "Advanced",
+      "yearsExperience": 7
+    },
+    {
+      "id": "sk_8",
+      "userId": "usr_alex_costa",
+      "name": "English (Fluent)",
+      "category": "Language",
+      "proficiency": "Expert",
+      "yearsExperience": 12
+    }
+  ],
+  "evidences": [
+    {
+      "id": "ev_alex_1",
+      "userId": "usr_alex_costa",
+      "experienceId": "exp_alex_1",
+      "projectId": "proj_alex_1",
+      "type": "direct",
+      "statement": "Managed $45M Capex portfolio across industrial facilities, delivering 8% cost savings ($3.6M) under baseline.",
+      "metric": "8% cost reduction ($3.6M saved on $45M budget)",
+      "source": "Audited Financial Close & Executive Steering Committee Report",
+      "confidence": "high",
+      "domainTag": "Cost Control",
+      "createdAt": "2026-10-06T09:02:08.161Z"
+    },
+    {
+      "id": "ev_alex_2",
+      "userId": "usr_alex_costa",
+      "experienceId": "exp_alex_1",
+      "projectId": "proj_alex_1",
+      "type": "direct",
+      "statement": "Maintained weekly and monthly project governance cadence with CEO, CFO, and Site Operations Directors.",
+      "metric": "100% C-suite steering committee attendance and approval record",
+      "source": "Executive Steering Committee Minutes & Signed Approvals",
+      "confidence": "high",
+      "domainTag": "Stakeholder Governance",
+      "createdAt": "2026-10-06T09:02:08.161Z"
+    },
+    {
+      "id": "ev_alex_3",
+      "userId": "usr_alex_costa",
+      "experienceId": "exp_alex_2",
+      "projectId": "proj_alex_2",
+      "type": "direct",
+      "statement": "Implemented standardized contract dispute and risk mitigation framework, eliminating $1.2M in vendor overcharges.",
+      "metric": "$1.2M contractor claims dismissed and 55% faster dispute resolution",
+      "source": "Contract Audit & Legal Sign-off",
+      "confidence": "high",
+      "domainTag": "Risk Management",
+      "createdAt": "2026-10-06T09:02:08.161Z"
+    },
+    {
+      "id": "ev_alex_4",
+      "userId": "usr_alex_costa",
+      "experienceId": "exp_alex_1",
+      "type": "transferable",
+      "statement": "Coordinated complex cross-functional product development pipelines and equipment commissioning involving 18 engineers.",
+      "metric": "18 cross-functional team members led, 0 critical schedule slips",
+      "source": "Annual Performance Appraisal",
+      "confidence": "high",
+      "domainTag": "Cross-functional Leadership",
+      "createdAt": "2026-10-06T09:02:08.161Z"
+    }
+  ]
+}

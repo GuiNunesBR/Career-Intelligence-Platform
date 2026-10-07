@@ -1,0 +1,15 @@
+Guilherme Medeiros
+Software Engineer
+
+Experience:
+- Senior Software Engineer at TechCorp (2020 - Present)
+  - Built scalable Node.js backend services.
+  - Improved DB performance by 40%.
+- Software Engineer at StartUp Inc (2018 - 2020)
+  - Developed React frontend features.
+
+Education:
+- BSc Computer Science (2018)
+
+Skills:
+TypeScript, Node.js, React, SQLite, PostgreSQL, AWS

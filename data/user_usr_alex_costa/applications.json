@@ -1,0 +1,31 @@
+[
+  {
+    "id": "app_alex_aura",
+    "userId": "usr_alex_costa",
+    "jobId": "job_alex_industrial_lead",
+    "jobTitle": "Global Project & Capex Controls Manager",
+    "company": "Aura Industrial Tech",
+    "status": "Ready to Apply",
+    "notes": "Strong match on Capex & Risk governance. Need tailored CV emphasizing SAP PS & $45M portfolio.",
+    "salaryTarget": "R$ 28.000 - R$ 32.000 / month",
+    "timeline": [
+      {
+        "status": "Saved",
+        "timestamp": "2026-10-04T09:02:08.179Z",
+        "note": "Job imported from LinkedIn"
+      },
+      {
+        "status": "Analyzing",
+        "timestamp": "2026-10-05T09:02:08.179Z",
+        "note": "Deep evidence mapping performed"
+      },
+      {
+        "status": "Ready to Apply",
+        "timestamp": "2026-10-06T09:02:08.179Z",
+        "note": "Tailored CV generated in Balanced mode"
+      }
+    ],
+    "createdAt": "2026-10-06T09:02:08.179Z",
+    "updatedAt": "2026-10-06T09:02:08.179Z"
+  }
+]

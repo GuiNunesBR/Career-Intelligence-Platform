@@ -1,0 +1,207 @@
+{
+  "profile": {
+    "id": "prof_mariana",
+    "userId": "usr_mariana_silva",
+    "headline": "Biotech & Cosmetic R&I Specialist | Formulation & Packaging Stability",
+    "summary": "8+ years in cosmetic chemistry and biotech R&I. Specializing in skincare emulsion formulation, primary packaging validation, ISO 22716 / GMP audits, and regulatory dossiers with ANVISA and international health authorities.",
+    "location": "Campinas, SP / Hybrid",
+    "targetRoles": [
+      "Cosmetic R&I Manager",
+      "Formulation Specialist Lead",
+      "Quality Assurance & Regulatory Head"
+    ],
+    "targetIndustries": [
+      "Cosmetics & Personal Care",
+      "Biotech",
+      "Pharmaceuticals",
+      "Dermocosmetics"
+    ],
+    "languages": [
+      {
+        "language": "Portuguese",
+        "proficiency": "Native"
+      },
+      {
+        "language": "English",
+        "proficiency": "Fluent (C1)"
+      },
+      {
+        "language": "French",
+        "proficiency": "Intermediate"
+      }
+    ],
+    "education": [
+      {
+        "degree": "B.S. in Pharmacy & Biochemical Sciences",
+        "institution": "UNICAMP",
+        "year": "2016",
+        "field": "Pharmaceutical Sciences & Chemistry"
+      },
+      {
+        "degree": "Postgraduate in Dermocosmetic Formulation",
+        "institution": "Faculdade Oswaldo Cruz",
+        "year": "2018",
+        "field": "Cosmetology"
+      }
+    ],
+    "createdAt": "2026-10-06T09:02:08.188Z",
+    "updatedAt": "2026-10-06T09:02:08.188Z"
+  },
+  "experiences": [
+    {
+      "id": "exp_mariana_1",
+      "userId": "usr_mariana_silva",
+      "company": "Lumière BioCosmetics Lab",
+      "title": "Lead Formulation & Packaging Scientist",
+      "startDate": "2021-01",
+      "isCurrent": true,
+      "employmentType": "full-time",
+      "domain": "Cosmetics & Personal Care R&I",
+      "location": "Campinas, SP",
+      "description": "Leading the formulation development pipeline for clean-beauty skincare, surfactant systems, and packaging compatibility testing.",
+      "createdAt": "2026-10-06T09:02:08.188Z",
+      "updatedAt": "2026-10-06T09:02:08.188Z"
+    },
+    {
+      "id": "exp_mariana_2",
+      "userId": "usr_mariana_silva",
+      "company": "DermaHealth Pharma",
+      "title": "Quality & Regulatory Analyst",
+      "startDate": "2017-02",
+      "endDate": "2020-12",
+      "employmentType": "full-time",
+      "domain": "Pharmaceutical & Dermocosmetic QA",
+      "location": "São Paulo, SP",
+      "description": "Maintained GMP compliance, analytical stability testing, and regulatory notification filings for topical products.",
+      "createdAt": "2026-10-06T09:02:08.188Z",
+      "updatedAt": "2026-10-06T09:02:08.188Z"
+    }
+  ],
+  "projects": [
+    {
+      "id": "proj_mariana_1",
+      "userId": "usr_mariana_silva",
+      "experienceId": "exp_mariana_1",
+      "name": "Clean Beauty Anti-Aging Emulsion Line",
+      "description": "Formulated stable water-in-oil and oil-in-water emulsions using natural biomimetic emulsifiers and peptide complexes.",
+      "domain": "Cosmetic Formulation & Rheology",
+      "scope": "6 SKU product line launch across Latin America",
+      "technologies": [
+        "Rheometer",
+        "High-Shear Homogenizer",
+        "HPLC",
+        "Accelerated Stability Chambers"
+      ],
+      "metrics": "Passed 90-day accelerated stability (45°C/75% RH) with 0 phase separation; approved for mass retail rollout",
+      "createdAt": "2026-10-06T09:02:08.188Z",
+      "updatedAt": "2026-10-06T09:02:08.188Z"
+    },
+    {
+      "id": "proj_mariana_2",
+      "userId": "usr_mariana_silva",
+      "experienceId": "exp_mariana_1",
+      "name": "Primary Packaging Compatibility & Leakage Minimization",
+      "description": "Evaluated pump dispenser mechanisms, airless bottles, and PCR-PET resins for formula interactions, torque seal, and drop resistance.",
+      "domain": "Packaging Engineering & Materials Validation",
+      "scope": "1.2M production unit batch validation",
+      "technologies": [
+        "Vacuum Leak Tester",
+        "Torque Meter",
+        "FTIR Spectroscopy"
+      ],
+      "metrics": "Reduced in-transit leakage defect rate from 1.8% to 0.02%, saving R$ 420K in returns",
+      "createdAt": "2026-10-06T09:02:08.188Z",
+      "updatedAt": "2026-10-06T09:02:08.188Z"
+    }
+  ],
+  "skills": [
+    {
+      "id": "sk_m1",
+      "userId": "usr_mariana_silva",
+      "name": "Cosmetic Formulation",
+      "category": "Domain",
+      "proficiency": "Expert",
+      "yearsExperience": 8
+    },
+    {
+      "id": "sk_m2",
+      "userId": "usr_mariana_silva",
+      "name": "Packaging Stability & Validation",
+      "category": "Technical",
+      "proficiency": "Expert",
+      "yearsExperience": 7
+    },
+    {
+      "id": "sk_m3",
+      "userId": "usr_mariana_silva",
+      "name": "ISO 22716 & Good Manufacturing Practices (GMP)",
+      "category": "Functional",
+      "proficiency": "Advanced",
+      "yearsExperience": 8
+    },
+    {
+      "id": "sk_m4",
+      "userId": "usr_mariana_silva",
+      "name": "Regulatory Dossiers (ANVISA / FDA)",
+      "category": "Domain",
+      "proficiency": "Advanced",
+      "yearsExperience": 6
+    },
+    {
+      "id": "sk_m5",
+      "userId": "usr_mariana_silva",
+      "name": "Rheology & Emulsion Chemistry",
+      "category": "Technical",
+      "proficiency": "Expert",
+      "yearsExperience": 8
+    },
+    {
+      "id": "sk_m6",
+      "userId": "usr_mariana_silva",
+      "name": "Microbiological Challenge Testing (PET)",
+      "category": "Technical",
+      "proficiency": "Competent",
+      "yearsExperience": 5
+    }
+  ],
+  "evidences": [
+    {
+      "id": "ev_m_1",
+      "userId": "usr_mariana_silva",
+      "experienceId": "exp_mariana_1",
+      "projectId": "proj_mariana_1",
+      "type": "direct",
+      "statement": "Formulated 14 commercial skincare and hair cosmetic formulas meeting stability specifications for Latin American launch.",
+      "metric": "14 successful commercial SKUs launched, 100% stability pass rate",
+      "source": "Laboratory Formula Master Batch Records",
+      "confidence": "high",
+      "domainTag": "Cosmetic Formulation",
+      "createdAt": "2026-10-06T09:02:08.188Z"
+    },
+    {
+      "id": "ev_m_2",
+      "userId": "usr_mariana_silva",
+      "experienceId": "exp_mariana_1",
+      "projectId": "proj_mariana_2",
+      "type": "direct",
+      "statement": "Validated primary packaging compatibility (airless bottles, pumps, PCR resins) reducing leakage defects to 0.02%.",
+      "metric": "Defect rate dropped from 1.8% to 0.02% (R$ 420K savings)",
+      "source": "QA Quality Release Certificate & Transport Simulation Report",
+      "confidence": "high",
+      "domainTag": "Packaging Validation",
+      "createdAt": "2026-10-06T09:02:08.188Z"
+    },
+    {
+      "id": "ev_m_3",
+      "userId": "usr_mariana_silva",
+      "experienceId": "exp_mariana_2",
+      "type": "direct",
+      "statement": "Prepared and submitted 35+ ANVISA cosmetic product notifications with zero regulatory rejections.",
+      "metric": "35+ ANVISA dossier notifications with 100% first-pass acceptance",
+      "source": "Regulatory Affairs Official Logbook",
+      "confidence": "high",
+      "domainTag": "Regulatory Compliance",
+      "createdAt": "2026-10-06T09:02:08.189Z"
+    }
+  ]
+}
