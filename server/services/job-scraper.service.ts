@@ -103,6 +103,28 @@ export class JobScraperService {
       return [];
     }
   }
+
+  async fetchJobDescription(url: string): Promise<string> {
+    try {
+      const response = await fetch(url, {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+          'Accept-Language': 'pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7',
+        }
+      });
+      if (!response.ok) return '';
+      
+      const html = await response.text();
+      const $ = cheerio.load(html);
+      
+      // LinkedIn public job pages usually have the description in .show-more-less-html__markup or similar
+      const description = $('.show-more-less-html__markup').text().trim();
+      return description || '';
+    } catch (e) {
+      console.warn(`Failed to fetch description for ${url}:`, e);
+      return '';
+    }
+  }
 }
 
 export const jobScraperService = new JobScraperService();

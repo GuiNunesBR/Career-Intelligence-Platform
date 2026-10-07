@@ -342,10 +342,10 @@ export const JobSearchView: React.FC<JobSearchViewProps> = ({
                   {/* Actions */}
                   <div className="flex-shrink-0 flex flex-col items-end justify-center gap-2">
                     <button 
-                      onClick={() => onSaveAsApplication(job.id)}
+                      onClick={() => onNavigate('fit_analysis', job.id)}
                       className="w-full text-center px-4 py-1.5 bg-blue-600 text-white rounded text-xs font-semibold hover:bg-blue-700 transition-colors flex items-center justify-center gap-1.5"
                     >
-                      <Briefcase className="w-3.5 h-3.5" /> Candidatar-se
+                      <Briefcase className="w-3.5 h-3.5" /> Analisar Fit
                     </button>
                     <button 
                       onClick={() => onNavigate('tailoring', job.id)}
