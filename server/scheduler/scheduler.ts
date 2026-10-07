@@ -6,13 +6,16 @@ export class AutomationScheduler {
   private isChecking = false;
 
   constructor() {
-    this.start();
+    if (process.env.NODE_ENV !== 'test') {
+      this.start();
+    }
   }
 
   public start(): void {
     if (this.timer) clearInterval(this.timer);
     // Check automations every 10 seconds; unref so it won't block Node process shutdown
     this.timer = setInterval(() => {
+      if (process.env.NODE_ENV === 'test') return;
       this.checkAutomations();
     }, 10000);
     if (this.timer && typeof this.timer.unref === 'function') {

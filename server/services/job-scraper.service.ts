@@ -1,4 +1,5 @@
 import fetch from 'node-fetch';
+import * as cheerio from 'cheerio';
 
 export interface ScrapedJob {
   title: string;
@@ -13,91 +14,94 @@ export interface ScrapedJob {
 
 export class JobScraperService {
   /**
-   * Busca vagas reais usando a API do JSearch (RapidAPI).
-   * O JSearch agrega dados do LinkedIn, Indeed e Glassdoor com alta confiabilidade.
-   * Se a chave RAPID_API_KEY não estiver configurada no .env, usará vagas simuladas (Mock).
+   * Busca vagas reais usando a busca pública anônima do LinkedIn.
+   * Não precisa de conta/senha. Usa o mesmo método do repo linkedin-job-searcher.
    */
-  public async searchJobs(roles: string, location: string, mode: string): Promise<ScrapedJob[]> {
-    const apiKey = process.env.RAPID_API_KEY;
-
-    if (!apiKey || apiKey === 'sua_chave_aqui') {
-      console.log('[JobScraper] Chave RAPID_API_KEY ausente. Usando dados simulados.');
-      return this.getMockJobs(roles, location, mode);
-    }
-
+  public async searchJobs(roles: string, location: string, mode: string, limit: number = 15): Promise<ScrapedJob[]> {
     try {
-      console.log(`[JobScraper] Buscando vagas reais na API para: ${roles} em ${location} (${mode})`);
+      console.log(`[JobScraper] Buscando vagas reais no LinkedIn público para: ${roles} | ${location} | ${mode} (Limite: ${limit})`);
       
-      const query = `${roles} ${mode === 'Remote' ? 'Remote' : ''} in ${location}`;
-      const url = `https://jsearch.p.rapidapi.com/search?query=${encodeURIComponent(query)}&page=1&num_pages=1`;
+      const queryTerm = roles.split(',')[0].trim();
+      
+      const stateMap: Record<string, string> = {
+        'RJ': 'Rio de Janeiro, Brasil',
+        'SP': 'São Paulo, Brasil',
+        'MG': 'Minas Gerais, Brasil',
+        'PR': 'Paraná, Brasil',
+        'RS': 'Rio Grande do Sul, Brasil',
+        'SC': 'Santa Catarina, Brasil',
+        'BA': 'Bahia, Brasil',
+        'DF': 'Distrito Federal, Brasil'
+      };
+
+      let searchLocation = location;
+      const upperLoc = location.trim().toUpperCase();
+      
+      if (stateMap[upperLoc]) {
+        searchLocation = stateMap[upperLoc];
+      } else if (location !== 'Anywhere' && location !== 'Brazil' && !location.toLowerCase().includes('brasil')) {
+        searchLocation = `${location}, Brasil`;
+      } else if (location === 'Anywhere') {
+        searchLocation = 'Brazil';
+      }
+      
+      const url = `https://www.linkedin.com/jobs/search/?keywords=${encodeURIComponent(queryTerm)}&location=${encodeURIComponent(searchLocation)}&f_TPR=r86400`;
+      
+      console.log(`[JobScraper] Acessando URL: ${url}`);
       
       const response = await fetch(url, {
-        method: 'GET',
         headers: {
-          'X-RapidAPI-Key': apiKey,
-          'X-RapidAPI-Host': 'jsearch.p.rapidapi.com'
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36',
+          'Accept-Language': 'pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7',
         }
       });
-
-      if (!response.ok) {
-        throw new Error(`API JSearch retornou erro: ${response.statusText}`);
-      }
-
-      const result = await response.json();
       
-      // Mapeia os resultados da API para o nosso formato interno
-      return (result.data || []).map((job: any) => ({
-        title: job.job_title,
-        company: job.employer_name,
-        location: job.job_city ? `${job.job_city}, ${job.job_state || job.job_country}` : (location || 'Remote'),
-        seniority: job.job_required_experience?.required_experience_in_months > 60 ? 'Senior' : 'Mid/Pleno',
-        url: job.job_apply_link || job.job_google_link,
-        employmentType: job.job_employment_type || mode,
-        description: job.job_description,
-        rawText: `${job.job_title} at ${job.employer_name}. ${job.job_description}`
-      }));
-    } catch (err) {
-      console.error('[JobScraper] Falha ao buscar na API real, caindo para mock:', err);
-      return this.getMockJobs(roles, location, mode);
-    }
-  }
-
-  private getMockJobs(roles: string, location: string, mode: string): ScrapedJob[] {
-    const roleArray = roles.split(',').map((r: string) => r.trim());
-    const targetRole = roleArray[0] || 'Software Engineer';
-    
-    return [
-      {
-        title: targetRole,
-        company: "TechNova " + Math.floor(Math.random() * 100),
-        location: location || "Remote",
-        seniority: "Senior",
-        url: "https://linkedin.com/jobs/view/" + Math.floor(Math.random() * 1000000),
-        employmentType: mode === 'Remote' ? 'Remote' : 'Full-time',
-        description: `Looking for an experienced ${targetRole} to lead our initiatives in ${location || 'a remote setting'}.`,
-        rawText: `Looking for an experienced ${targetRole} to lead our initiatives. 5+ years experience required.`
-      },
-      {
-        title: roleArray[1] || `Senior ${targetRole}`,
-        company: "DataCorp",
-        location: location || "New York",
-        seniority: "Lead",
-        url: "https://linkedin.com/jobs/view/" + Math.floor(Math.random() * 1000000),
-        employmentType: mode || "Hybrid",
-        description: `Seeking a skilled ${roleArray[1] || targetRole} with strong analytical skills.`,
-        rawText: `Seeking a skilled ${roleArray[1] || targetRole} with strong analytical skills. Requirements: Leadership, Stakeholder management.`
-      },
-      {
-        title: targetRole + " Specialist",
-        company: "Innovate INC",
-        location: "Remote",
-        seniority: "Mid",
-        url: "https://linkedin.com/jobs/view/" + Math.floor(Math.random() * 1000000),
-        employmentType: "Full-time",
-        description: `Join us as a ${targetRole} to revolutionize our platform.`,
-        rawText: `Join us as a ${targetRole} to revolutionize our platform. Must have domain expertise.`
+      if (!response.ok) {
+        throw new Error(`LinkedIn retornou erro HTTP: ${response.status} ${response.statusText}`);
       }
-    ];
+
+      const html = await response.text();
+      const $ = cheerio.load(html);
+      
+      const jobsData: ScrapedJob[] = [];
+      
+      // Parse public LinkedIn job cards
+      $('.jobs-search__results-list > li').each((_, el) => {
+        // We will collect as many as the page has (up to 25 usually)
+        // Deduplication and limit slicing happens in the worker
+        const jobCard = $(el).find('.base-search-card');
+        const title = jobCard.find('h3.base-search-card__title').text().trim();
+        const company = jobCard.find('h4.base-search-card__subtitle').text().trim();
+        const jobLocation = jobCard.find('.job-search-card__location').text().trim();
+        let link = jobCard.find('.base-card__full-link').attr('href') || jobCard.attr('href') || '';
+        
+        if (link && link.includes('?')) {
+           link = link.split('?')[0]; // Limpa tracking params
+        }
+
+        if (title && company && link) {
+          jobsData.push({
+            title,
+            company,
+            location: jobLocation,
+            seniority: title.toLowerCase().includes('senior') || title.toLowerCase().includes('sênior') ? 'Senior' : 'Mid/Pleno',
+            url: link,
+            employmentType: 'Full-time',
+            description: `Vaga para ${title} na ${company} localizada em ${jobLocation}. Para mais detalhes e aplicar, acesse o link da vaga.`,
+            rawText: `${title} at ${company}. Location: ${jobLocation}\nLink: ${link}\n\nVaga extraída do LinkedIn.`
+          });
+        }
+      });
+      
+      if (jobsData.length === 0) {
+        console.log('[JobScraper] LinkedIn não retornou vagas (possível rate-limit/bloqueio ou 0 resultados).');
+      }
+
+      return jobsData;
+    } catch (err) {
+      console.error('[JobScraper] Falha no scraping do LinkedIn:', err);
+      return [];
+    }
   }
 }
 

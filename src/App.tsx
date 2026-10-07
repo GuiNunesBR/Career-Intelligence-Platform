@@ -284,12 +284,32 @@ export default function App() {
       
       if (!response.ok) throw new Error('Upload failed');
       const data = await response.json();
-      console.log('Upload successful:', data);
+      console.log('Upload initiated:', data);
       
+      const jobId = data.jobId;
+      if (jobId) {
+        showToast('Processando CV em background... Isso pode levar alguns segundos.', 'info');
+        
+        let attempts = 0;
+        while (attempts < 30) {
+          await new Promise(r => setTimeout(r, 2000));
+          const jobsRes = await api.getBackgroundJobs();
+          const job = jobsRes.backgroundJobs.find((j) => j.id === jobId);
+          if (job) {
+            if (job.status === 'completed') {
+              break;
+            } else if (job.status === 'failed' || job.status === 'cancelled') {
+              throw new Error('Falha no processamento do background worker');
+            }
+          }
+          attempts++;
+        }
+      }
+
       // Refresh career lake
       if (currentUser) {
         await loadUserData(currentUser.id);
-        showToast('Currículo processado e dados importados com sucesso!');
+        showToast('Currículo processado e dados importados com sucesso!', 'success');
       }
     } catch (err) {
       console.error(err);
@@ -356,7 +376,7 @@ export default function App() {
   const handleGenerateCV = async (jobId: string, mode: TailoringMode, language?: string) => {
     setIsGeneratingCV(true);
     try {
-      const { cv } = await api.generateCV(jobId, mode, language);
+      const { cv } = await api.generateCV(jobId, mode);
       setCurrentCV(cv);
       showToast(`CV gerado no modo ${mode.toUpperCase()} com proveniência auditável!`);
     } finally {

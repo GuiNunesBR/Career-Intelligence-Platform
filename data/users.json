@@ -5,9 +5,9 @@
     "name": "Alexandre Costa",
     "avatar": "AC",
     "currentRole": "Senior Project & Cost Controller",
-    "createdAt": "2026-09-25T13:11:14.574Z",
-    "passwordHash": "$2b$10$GdzXFC8TXS82rA.UbGrHeu095iYHu28291lE8YKR.JfVieE4/g51W",
-    "updatedAt": "2026-09-25T14:05:42.484Z"
+    "passwordHash": "$2b$10$Ml78AKcca2qmHSHqUTFfZuywBNvf5UMrn.kLMp2NWs5or.6nWyEQi",
+    "createdAt": "2026-10-06T09:02:08.149Z",
+    "updatedAt": "2026-10-06T09:02:08.152Z"
   },
   {
     "id": "usr_mariana_silva",
@@ -15,148 +15,8 @@
     "name": "Mariana Silva",
     "avatar": "MS",
     "currentRole": "Biotech & Cosmetic R&I Specialist",
-    "createdAt": "2026-09-25T13:11:14.574Z",
-    "passwordHash": "$2b$10$GdzXFC8TXS82rA.UbGrHeu095iYHu28291lE8YKR.JfVieE4/g51W",
-    "updatedAt": "2026-09-25T14:05:42.484Z"
-  },
-  {
-    "id": "usr_1790345192519_zoxu8",
-    "email": "test_1790345192429@example.com",
-    "name": "Carlos Teste",
-    "avatar": "CT",
-    "currentRole": "Lead Architect",
-    "passwordHash": "$2b$10$FFYMqLCw0W8nxbB7ph/sme3qFhx5VxhEpGRQogvCF66eHq4EJ9k/S",
-    "createdAt": "2026-09-25T14:06:32.519Z",
-    "updatedAt": "2026-09-25T14:06:32.519Z"
-  },
-  {
-    "id": "usr_1790345206561_lxnf2",
-    "email": "test_1790345206475@example.com",
-    "name": "Carlos Teste",
-    "avatar": "CT",
-    "currentRole": "Lead Architect",
-    "passwordHash": "$2b$10$FAgrpHI2dEejgRFqZ3/w.u.MbVW4mL3w1AWPSRbif9uB3dQABIure",
-    "createdAt": "2026-09-25T14:06:46.561Z",
-    "updatedAt": "2026-09-25T14:06:46.561Z"
-  },
-  {
-    "id": "usr_1790345227722_748tl",
-    "email": "test_1790345227627@example.com",
-    "name": "Carlos Teste",
-    "avatar": "CT",
-    "currentRole": "Lead Architect",
-    "passwordHash": "$2b$10$lpCms2B265oI4orBaJ5tRebXICgqgBXbb7spL3CivnwQKstmXvpiG",
-    "createdAt": "2026-09-25T14:07:07.722Z",
-    "updatedAt": "2026-09-25T14:07:07.722Z"
-  },
-  {
-    "id": "usr_1790345271342_19v5r",
-    "email": "test_1790345271253@example.com",
-    "name": "Carlos Teste",
-    "avatar": "CT",
-    "currentRole": "Lead Architect",
-    "passwordHash": "$2b$10$rW0nenFWZsfsLgq7ie/eJeFLxBYTMIi0TwDSm/G.mkwxHQcLjyJHe",
-    "createdAt": "2026-09-25T14:07:51.342Z",
-    "updatedAt": "2026-09-25T14:07:51.342Z"
-  },
-  {
-    "id": "usr_1790345295479_upoct",
-    "email": "test_1790345295385@example.com",
-    "name": "Carlos Teste",
-    "avatar": "CT",
-    "currentRole": "Lead Architect",
-    "passwordHash": "$2b$10$aKp02si5EGCUKQKEiVjQeORMjA6mI7vPyaeIe9ux1cxgghJDYZOs.",
-    "createdAt": "2026-09-25T14:08:15.479Z",
-    "updatedAt": "2026-09-25T14:08:15.479Z"
-  },
-  {
-    "id": "usr_1790345316306_zauvk",
-    "email": "test_1790345316212@example.com",
-    "name": "Carlos Teste",
-    "avatar": "CT",
-    "currentRole": "Lead Architect",
-    "passwordHash": "$2b$10$uCb.pz8JIkmH5MIvxR9/reCU2whSDGvpAajuVmlitQU.P/vlr6RIK",
-    "createdAt": "2026-09-25T14:08:36.306Z",
-    "updatedAt": "2026-09-25T14:08:36.306Z"
-  },
-  {
-    "id": "usr_1790345376971_ps5eb",
-    "email": "test_1790345376874@example.com",
-    "name": "Carlos Teste",
-    "avatar": "CT",
-    "currentRole": "Lead Architect",
-    "passwordHash": "$2b$10$ivrIebpfJeNGy7ezfqBiV.e/VcHd2pAsHVaDvfQ1Q329fB/GURwDu",
-    "createdAt": "2026-09-25T14:09:36.971Z",
-    "updatedAt": "2026-09-25T14:09:36.971Z"
-  },
-  {
-    "id": "usr_1790346028132_45qkf",
-    "email": "test_1790346028033@example.com",
-    "name": "Carlos Teste",
-    "avatar": "CT",
-    "currentRole": "Lead Architect",
-    "passwordHash": "$2b$10$zi3.oX7Q92N3yc/t1FvSMu3fRTsq4v2WjLXyJXpMSjE6fs8OL5mEO",
-    "createdAt": "2026-09-25T14:20:28.132Z",
-    "updatedAt": "2026-09-25T14:20:28.132Z"
-  },
-  {
-    "id": "usr_1790346065806_elf8c",
-    "email": "test_1790346065717@example.com",
-    "name": "Carlos Teste",
-    "avatar": "CT",
-    "currentRole": "Lead Architect",
-    "passwordHash": "$2b$10$aBARHXBPv5TjSZaVssoOsO2ZuLedocGzbpGFvL3B2hwB5CYHwTsN2",
-    "createdAt": "2026-09-25T14:21:05.806Z",
-    "updatedAt": "2026-09-25T14:21:05.806Z"
-  },
-  {
-    "id": "usr_1790346629816_hqz69",
-    "email": "test_1790346629725@example.com",
-    "name": "Carlos Teste",
-    "avatar": "CT",
-    "currentRole": "Lead Architect",
-    "passwordHash": "$2b$10$AXS4SQtnK6vSC5e.0i35xOkE8F3Qv0qilrPG9xCUyp4rcqWssvcRW",
-    "createdAt": "2026-09-25T14:30:29.816Z",
-    "updatedAt": "2026-09-25T14:30:29.816Z"
-  },
-  {
-    "id": "usr_1790346659868_ekrim",
-    "email": "test_1790346659778@example.com",
-    "name": "Carlos Teste",
-    "avatar": "CT",
-    "currentRole": "Lead Architect",
-    "passwordHash": "$2b$10$G9.QrGkT9bgUh42CXrt/6u.eI8mdTt01s67Q2Gqo94WckgjiExKEW",
-    "createdAt": "2026-09-25T14:30:59.868Z",
-    "updatedAt": "2026-09-25T14:30:59.868Z"
-  },
-  {
-    "id": "usr_1790347106180_thxcy",
-    "email": "test_1790347106070@example.com",
-    "name": "Carlos Teste",
-    "avatar": "CT",
-    "currentRole": "Lead Architect",
-    "passwordHash": "$2b$10$BFPBNRI4LliFnxjRfueIBuxBWLU2iKCDaxS5KVYlthjpW55nHOFvO",
-    "createdAt": "2026-09-25T14:38:26.180Z",
-    "updatedAt": "2026-09-25T14:38:26.180Z"
-  },
-  {
-    "id": "usr_1790347155841_fa55r",
-    "email": "test_1790347155749@example.com",
-    "name": "Carlos Teste",
-    "avatar": "CT",
-    "currentRole": "Lead Architect",
-    "passwordHash": "$2b$10$AeC.abGgOKmYEH0M30fvUO9RU2Bj.X/G74YGUSMrxw7C3Pt/Qv37.",
-    "createdAt": "2026-09-25T14:39:15.841Z",
-    "updatedAt": "2026-09-25T14:39:15.841Z"
-  },
-  {
-    "id": "usr_1790349398942_46vt9",
-    "email": "test_1790349398843@example.com",
-    "name": "Carlos Teste",
-    "avatar": "CT",
-    "currentRole": "Lead Architect",
-    "passwordHash": "$2b$10$7Cxz82IIWVU4AmlXRs6x4.kBBS27OKnVYmX3zSu2Tb94iAVtO2lQe",
-    "createdAt": "2026-09-25T15:16:38.942Z",
-    "updatedAt": "2026-09-25T15:16:38.942Z"
+    "passwordHash": "$2b$10$Ml78AKcca2qmHSHqUTFfZuywBNvf5UMrn.kLMp2NWs5or.6nWyEQi",
+    "createdAt": "2026-10-06T09:02:08.152Z",
+    "updatedAt": "2026-10-06T09:02:08.152Z"
   }
 ]

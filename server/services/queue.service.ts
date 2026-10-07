@@ -23,8 +23,8 @@ export class QueueService {
   ): Promise<BackgroundJob> {
     if (!userId) throw new Error('User ID is required');
 
-    // Deterministic Idempotency Key
-    const executionWindow = new Date().toISOString().slice(0, 13);
+    // Deterministic Idempotency Key (granular down to the second to allow manual triggers)
+    const executionWindow = new Date().toISOString().slice(0, 19);
     const idempotencyKey = customIdempotencyKey || `${userId}:${jobType}:${executionWindow}`;
 
     const userJobs = await this.queueRepo.getBackgroundJobs(userId);

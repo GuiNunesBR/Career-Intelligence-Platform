@@ -81,7 +81,7 @@ export class SqliteUserRepository implements IUserRepository {
       userId,
       tokenHash: token,
       createdAt: new Date().toISOString(),
-      expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24 * 7),
+      expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24 * 7).toISOString(),
     }).returning();
 
     const userResult = await db.select().from(users).where(eq(users.id, userId)).limit(1);

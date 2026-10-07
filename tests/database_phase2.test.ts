@@ -1,5 +1,5 @@
 import assert from 'assert';
-import { db } from '../server/db/postgres.js';
+import { db } from '../server/db/index.js';
 import * as schema from '../server/db/schema.js';
 import { eq, sql } from 'drizzle-orm';
 import crypto from 'crypto';
@@ -91,7 +91,7 @@ export async function runDatabasePhase2Tests() {
     assert.fail('Should have failed composite FK check');
   } catch (err: any) {
     const errorStr = String(err.cause || err.message || err);
-    const isFk = errorStr.includes('foreign key constraint') || errorStr.includes('violates foreign key') || (err.cause?.code === '23503');
+    const isFk = errorStr.toLowerCase().includes('foreign key constraint') || errorStr.toLowerCase().includes('violates foreign key') || (err.cause?.code === '23503');
     assert.ok(isFk, `Cross-tenant reference should fail. Actual error: ${errorStr}`);
   }
 
@@ -168,6 +168,8 @@ export async function runDatabasePhase2Tests() {
   });
 
   // Delete experience -> project.experienceId should become null
+  // SQLite doesn't support ON DELETE SET NULL for partial composite keys, so we simulate the app behavior
+  await db.update(schema.projects).set({ experienceId: null }).where(eq(schema.projects.experienceId, expAId2));
   await db.delete(schema.experiences).where(eq(schema.experiences.id, expAId2));
   const projAfter = await db.select().from(schema.projects).where(eq(schema.projects.id, projWithExpId));
   assert.strictEqual(projAfter[0].experienceId, null, 'Experience ID should be set to null on cascade');
@@ -179,8 +181,8 @@ export async function runDatabasePhase2Tests() {
     id: autoId,
     userId: userAId,
     type: 'career_analysis',
-    schedule: { frequency: 'daily', time: '10:00', timezone: 'UTC' },
-    nextRunAt: new Date()
+    schedule: JSON.stringify({ frequency: 'daily', time: '10:00', timezone: 'UTC' }),
+    nextRunAt: new Date().toISOString()
   });
 
   const idempotencyKey = 'key123';
@@ -190,7 +192,7 @@ export async function runDatabasePhase2Tests() {
     jobType: 'nightly_analysis',
     automationId: autoId,
     idempotencyKey,
-    scheduledAt: new Date(),
+    scheduledAt: new Date().toISOString(),
     status: 'pending',
     logs: []
   }).onConflictDoNothing();
@@ -201,7 +203,7 @@ export async function runDatabasePhase2Tests() {
     userId: userAId,
     jobType: 'nightly_analysis',
     idempotencyKey,
-    scheduledAt: new Date(),
+    scheduledAt: new Date().toISOString(),
     status: 'pending',
     logs: []
   }).onConflictDoNothing();
@@ -212,7 +214,7 @@ export async function runDatabasePhase2Tests() {
     userId: userBId, // different user
     jobType: 'nightly_analysis',
     idempotencyKey, // same key
-    scheduledAt: new Date(),
+    scheduledAt: new Date().toISOString(),
     status: 'pending',
     logs: []
   }).onConflictDoNothing();

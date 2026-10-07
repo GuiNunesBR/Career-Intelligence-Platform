@@ -11,6 +11,8 @@ async function main() {
   console.log('====================================================');
   console.log('  CAREER LAKE V2.1 HARDENING — VERIFICATION RUNNER  ');
   console.log('====================================================\n');
+  
+  process.env.NODE_ENV = 'test';
 
   const start = Date.now();
   let passed = 0;

@@ -51,6 +51,7 @@ export class SqliteQueueRepository implements IJobQueueRepository {
     const result = await db.select().from(backgroundJobs).where(
       or(
         eq(backgroundJobs.status, 'pending'),
+        eq(backgroundJobs.status, 'queued'),
         eq(backgroundJobs.status, 'running') // the queue service actually claims running jobs too if it restarts
       )
     );
@@ -75,20 +76,26 @@ export class SqliteQueueRepository implements IJobQueueRepository {
   async saveBackgroundJob(userId: string, job: BackgroundJob): Promise<BackgroundJob> {
     const existing = await this.getJobById(userId, job.id);
     if (existing) {
-      const [updated] = await db.update(backgroundJobs).set({
-        status: job.status,
-        startedAt: job.startedAt ? new Date(job.startedAt) : null,
-        finishedAt: job.finishedAt ? new Date(job.finishedAt) : null,
-        progress: job.progress,
-        result: job.result,
-        payload: job.payload,
-        error: job.error,
-        attempt: job.attempt,
-        maxAttempts: job.maxAttempts,
-        retryCount: job.retryCount,
-        logs: job.logs,
-        updatedAt: new Date().toISOString(),
-      }).where(and(eq(backgroundJobs.userId, userId), eq(backgroundJobs.id, job.id))).returning();
+      let updated;
+      try {
+        [updated] = await db.update(backgroundJobs).set({
+          status: job.status,
+          startedAt: job.startedAt || null,
+          finishedAt: job.finishedAt || null,
+          progress: job.progress,
+          result: job.result,
+          payload: job.payload,
+          error: job.error,
+          attempt: job.attempt,
+          maxAttempts: job.maxAttempts,
+          retryCount: job.retryCount,
+          logs: job.logs,
+          updatedAt: new Date().toISOString(),
+        }).where(and(eq(backgroundJobs.userId, userId), eq(backgroundJobs.id, job.id))).returning();
+      } catch (err: any) {
+        console.error('Detailed saveBackgroundJob error:', err.message, err.cause);
+        throw err;
+      }
       
       if (!updated) {
         throw new Error(`Concurrency error: Background job ${job.id} was deleted or unavailable during update.`);
@@ -117,10 +124,10 @@ export class SqliteQueueRepository implements IJobQueueRepository {
         jobType: job.jobType,
         automationId: job.automationId,
         idempotencyKey: job.idempotencyKey,
-        scheduledAt: new Date(job.scheduledAt),
+        scheduledAt: job.scheduledAt,
         status: job.status,
-        startedAt: job.startedAt ? new Date(job.startedAt) : null,
-        finishedAt: job.finishedAt ? new Date(job.finishedAt) : null,
+        startedAt: job.startedAt || null,
+        finishedAt: job.finishedAt || null,
         progress: job.progress,
         result: job.result,
         payload: job.payload,
