@@ -254,12 +254,26 @@ export class BackgroundWorker {
         
         for (const mJob of newJobsToAnalyze) {
           try {
-            const parsed = await aiService.parseJob(mJob.rawText);
+            let fullDescription = '';
+            if (mJob.url) {
+              job.logs.push(`[${new Date().toISOString()}] Fetching full description for "${mJob.title}"...`);
+              await jobQueueRepository.saveBackgroundJob(userId, job);
+              fullDescription = await jobScraperService.fetchJobDescription(mJob.url);
+              // avoid immediate rate limit from LinkedIn
+              await new Promise(r => setTimeout(r, 1000));
+            }
+            
+            const rawTextToAnalyze = fullDescription ? 
+              `Vaga: ${mJob.title}\nEmpresa: ${mJob.company}\nLocal: ${mJob.location}\nDescrição:\n${fullDescription}` : 
+              mJob.rawText;
+              
+            const parsed = await aiService.parseJob(rawTextToAnalyze);
             const jobId = `job_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`;
             const tempJob = {
               ...mJob,
               id: jobId,
               userId,
+              rawText: rawTextToAnalyze,
               createdAt: new Date().toISOString(),
               updatedAt: new Date().toISOString(),
               requirements: parsed.requirements

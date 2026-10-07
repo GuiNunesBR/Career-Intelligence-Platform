@@ -28,7 +28,7 @@ function getAI() {
   return _ai;
 }
 
-async function withTimeout<T>(promise: Promise<T>, ms = 6000): Promise<T> {
+async function withTimeout<T>(promise: Promise<T>, ms = 60000): Promise<T> {
   let timer: any;
   const timeoutPromise = new Promise<never>((_, reject) => {
     timer = setTimeout(() => reject(new Error('AI generation timed out')), ms);
@@ -753,7 +753,7 @@ Return a JSON object with:
                 }
               }
             }
-          }), 30000
+          }), 60000
         );
         
         if (response.text) {
