@@ -7,8 +7,9 @@ import {
 } from './container.js';
 import { jobScraperService } from './services/job-scraper.service.js';
 import { AIError } from './ai-provider.js';
-import { headlineScore } from '../src/shared/fitScore.js';
 import { buildResumeImport } from './services/resume-import.service.js';
+import { runJobSearch, agentFromPayload } from './services/job-search.service.js';
+import { randomUUID } from 'crypto';
 import { BackgroundJob } from '../src/shared/types.js';
 
 const MAX_RETRIES = 3;
@@ -173,136 +174,49 @@ export class BackgroundWorker {
         job.result = { tailoredStatus: 'up_to_date' };
         job.logs.push(`[${new Date().toISOString()}] Scheduled tailoring background process completed.`);
       } else if (job.jobType === 'job_search_agent') {
-        job.progress = 20;
-        job.logs.push(`[${new Date().toISOString()}] Started Job Search Agent for user ${userId}.`);
-        await jobQueueRepository.saveBackgroundJob(userId, job);
-
-        job.logs.push(`[${new Date().toISOString()}] Searching external job boards...`);
-        job.progress = 40;
-        await jobQueueRepository.saveBackgroundJob(userId, job);
-
-        const roles = job.payload?.roles || 'Software Engineer';
-        const location = job.payload?.location || 'Anywhere';
-        const mode = job.payload?.mode || 'Remote';
-        const seniority = job.payload?.seniority || '';
-
-        job.logs.push(`[${new Date().toISOString()}] Searching for: ${roles} | Location: ${location} | Mode: ${mode}`);
+        job.progress = 10;
+        const agent = agentFromPayload(job.payload);
+        if (!agent.roles.length) throw new Error('Search agent has no roles configured');
+        job.logs.push(
+          `[${new Date().toISOString()}] Agente: cargos=${agent.roles.join(', ')} | níveis=${agent.seniority.join(', ') || 'todos'} | local=${agent.location || 'Brasil'} | modalidade=${agent.modes.join(', ') || 'todas'}`
+        );
         await jobQueueRepository.saveBackgroundJob(userId, job);
 
         const existingJobs = await jobRepository.getJobs(userId);
-        const existingUrls = new Set(existingJobs.map(j => j.url).filter(Boolean));
-
-        // Use external API (RapidAPI JSearch) to find real jobs
-        const scrapedJobs = await jobScraperService.searchJobs(roles, location, mode, 50);
-
-        const newJobsToAnalyze = scrapedJobs.filter(j => {
-          if (j.url && existingUrls.has(j.url)) return false;
-
-          const lowerTitle = j.title.toLowerCase();
-          const isIntern = lowerTitle.includes('estágio') || lowerTitle.includes('estagio') || lowerTitle.includes('intern');
-          const isCoordinator = lowerTitle.includes('coordenador') || lowerTitle.includes('coord');
-          const isManager = lowerTitle.includes('gerente') || lowerTitle.includes('manager');
-
-          const sLower = seniority.toLowerCase();
-          if (!sLower.includes('liderança') && !sLower.includes('especialista') && (isCoordinator || isManager)) return false;
-          if (!sLower.includes('estágio') && !sLower.includes('estagio') && isIntern) return false;
-
-          return true;
-        }).slice(0, 15);
-
-        job.logs.push(`[${new Date().toISOString()}] Encontradas ${newJobsToAnalyze.length} vagas NOVAS na página. Iniciando processamento de IA...`);
-        await jobQueueRepository.saveBackgroundJob(userId, job);
-
-        let processed = 0;
-        const evaluatedJobs: Array<{ job: any; analysis: any | null }> = [];
-
-        for (const mJob of newJobsToAnalyze) {
-          let tempJob: any = null;
-          try {
-            let fullDescription = '';
-            if (mJob.url) {
-              job.logs.push(`[${new Date().toISOString()}] Fetching full description for "${mJob.title}"...`);
-              await jobQueueRepository.saveBackgroundJob(userId, job);
-              fullDescription = await jobScraperService.fetchJobDescription(mJob.url);
-              // avoid immediate rate limit from LinkedIn
-              await new Promise(r => setTimeout(r, 1000));
-            }
-
-            const now = new Date().toISOString();
-            tempJob = {
-              ...mJob,
-              id: `job_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`,
-              userId,
-              createdAt: now,
-              updatedAt: now,
-              requirements: [],
-            };
-
-            if (!fullDescription) {
-              // The scraper's stub text is not a job description: analyzing it would produce a meaningless score
-              job.logs.push(`[${new Date().toISOString()}] Sem descrição completa para "${mJob.title}". Vaga salva como não analisada.`);
-              evaluatedJobs.push({ job: tempJob, analysis: null });
-            } else {
-              const rawTextToAnalyze = `Vaga: ${mJob.title}\nEmpresa: ${mJob.company}\nLocal: ${mJob.location}\nDescrição:\n${fullDescription}`;
-              tempJob.rawText = rawTextToAnalyze;
-              tempJob.description = fullDescription;
-
-              const parsed = await aiService.parseJob(rawTextToAnalyze);
-              tempJob.requirements = parsed.requirements;
-              tempJob.seniority = parsed.seniority;
-
-              job.logs.push(`[${new Date().toISOString()}] Found: "${tempJob.title}" at ${tempJob.company}. Running Fit Analysis...`);
-              await jobQueueRepository.saveBackgroundJob(userId, job);
-
-              const analysisData = await aiService.analyzeFit(lake, tempJob);
-              evaluatedJobs.push({ job: tempJob, analysis: analysisData });
-            }
-          } catch (e: any) {
-            job.logs.push(`[${new Date().toISOString()}] Erro ao analisar vaga "${mJob.title}": ${e.message}. Vaga salva como não analisada.`);
-            if (tempJob) evaluatedJobs.push({ job: tempJob, analysis: null });
-          }
-
-          processed++;
-          job.progress = 40 + (processed * (50 / newJobsToAnalyze.length));
-
-          if (processed < newJobsToAnalyze.length) {
-            job.logs.push(`[${new Date().toISOString()}] Waiting 12s to avoid Gemini API Rate Limits...`);
+        const { results, stats } = await runJobSearch(agent, lake, existingJobs, {
+          scraper: jobScraperService,
+          ai: aiService,
+          log: async (message) => {
+            job.logs.push(`[${new Date().toISOString()}] ${message}`);
+            job.progress = Math.min(95, job.progress + 3);
             await jobQueueRepository.saveBackgroundJob(userId, job);
-            await new Promise(r => setTimeout(r, 12000));
+          },
+        });
+
+        // Every analyzed job and every job that could not be analyzed is saved, so none silently disappears
+        for (const item of results) {
+          const now = new Date().toISOString();
+          const saved = { ...item.job, id: `job_${randomUUID()}`, userId, createdAt: now, updatedAt: now };
+          await jobRepository.saveJob(userId, saved);
+          if (item.analysis) {
+            await analysisRepository.saveAnalysis(userId, {
+              ...item.analysis,
+              id: `fit_${randomUUID()}`,
+              userId,
+              jobId: saved.id,
+              createdAt: now,
+            });
           }
         }
 
-        // Save the top 10 analyzed jobs, plus every job that could not be analyzed (so none silently disappear)
-        const analyzed = evaluatedJobs
-          .filter((item) => item.analysis)
-          .sort((a, b) => (headlineScore(b.analysis) ?? -1) - (headlineScore(a.analysis) ?? -1));
-        const notAnalyzed = evaluatedJobs.filter((item) => !item.analysis);
-        const toSave = [...analyzed.slice(0, 10), ...notAnalyzed];
-
-        job.logs.push(`[${new Date().toISOString()}] Salvando ${Math.min(10, analyzed.length)} vagas analisadas (de ${analyzed.length}) e ${notAnalyzed.length} não analisadas...`);
-
-        for (const item of toSave) {
-          await jobRepository.saveJob(userId, item.job);
-          if (!item.analysis) continue;
-          await analysisRepository.saveAnalysis(userId, {
-            ...item.analysis,
-            id: `fit_${Date.now()}_${item.job.id}`,
-            userId,
-            jobId: item.job.id,
-            createdAt: new Date().toISOString()
-          });
-        }
-
+        const notAnalyzed = results.filter((r) => !r.analysis).length;
         job.status = 'completed';
         job.progress = 100;
         job.finishedAt = new Date().toISOString();
-        job.result = {
-          jobsFound: scrapedJobs.length,
-          topFitSaved: Math.min(10, analyzed.length),
-          notAnalyzedSaved: notAnalyzed.length,
-          status: notAnalyzed.length ? 'partial' : 'success',
-        };
-        job.logs.push(`[${new Date().toISOString()}] Job Search completed successfully.`);
+        job.result = { ...stats, saved: results.length, notAnalyzedSaved: notAnalyzed, status: notAnalyzed ? 'partial' : 'success' };
+        job.logs.push(
+          `[${new Date().toISOString()}] Busca concluída: ${stats.found} encontradas, ${stats.duplicates} repetidas, ${stats.outsideSeniority} fora do nível, ${stats.belowShortlist} abaixo do pré-ranking, ${stats.analyzed} analisadas, ${notAnalyzed} salvas sem análise.`
+        );
         await jobQueueRepository.saveBackgroundJob(userId, job);
       } else {
         job.status = 'completed';

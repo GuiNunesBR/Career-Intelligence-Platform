@@ -5,6 +5,8 @@ import {
   generateCoverLetterContent,
   parseResumeToLake,
   ParsedResume,
+  TailorOptions,
+  TailorRawOutput,
 } from '../ai.js';
 import { JobParsingAIOutputSchema } from '../validation/ai_schemas.js';
 import {
@@ -41,13 +43,9 @@ export class AIService {
     return performEvidenceFitAnalysis(lake, job);
   }
 
-  async tailorCV(
-    lake: UserCareerLake,
-    job: Job,
-    mode: TailoringMode,
-    language?: string
-  ): Promise<Omit<TailoredCV, 'id' | 'userId' | 'createdAt'>> {
-    return generateTailoredCVContent(lake, job, mode, language);
+  /** Raw model output: the tailoring service grounds it against the Lake before anything is saved. */
+  async tailorCV(lake: UserCareerLake, job: Job, mode: TailoringMode, options: TailorOptions = {}): Promise<TailorRawOutput> {
+    return generateTailoredCVContent(lake, job, mode, options);
   }
 
   async generateCoverLetter(

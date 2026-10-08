@@ -191,6 +191,9 @@ export const tailoredCvs = sqliteTable('tailored_cvs', {
   selectedProjects: text('selected_projects', { mode: 'json' }).notNull().$type<any>(),
   atsKeywordsMatched: text('ats_keywords_matched', { mode: 'json' }).notNull().$type<string[]>(),
   honestyAuditNotes: text('honesty_audit_notes', { mode: 'json' }).notNull().$type<string[]>(),
+  language: text('language'),
+  jobKeywords: text('job_keywords', { mode: 'json' }).$type<string[]>(),
+  groundingIssues: text('grounding_issues', { mode: 'json' }).$type<any[]>(),
   createdAt: text().default(sql`CURRENT_TIMESTAMP`).notNull()
 }, (table) => {
   return {

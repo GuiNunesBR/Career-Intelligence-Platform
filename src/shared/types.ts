@@ -220,6 +220,8 @@ export interface TailoredCVExperience {
   title: string;
   period: string;
   bullets: string[];
+  /** Lake ids (evidence or experience) supporting each bullet, aligned with `bullets`. */
+  bulletEvidence?: string[][];
   evidenceCitations: string[];
 }
 
@@ -249,6 +251,10 @@ export interface TailoredCV {
   selectedProjects: TailoredCVProject[];
   atsKeywordsMatched: string[];
   honestyAuditNotes: string[];
+  /** Keywords of the job posting (exact terms), used by the ATS check. */
+  jobKeywords?: string[];
+  /** Content removed by the grounding checks, shown to the user. */
+  groundingIssues?: Array<{ where: string; text: string; reason: string }>;
   createdAt: string;
 }
 

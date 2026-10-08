@@ -197,7 +197,13 @@ export async function runAIValidationTests(): Promise<void> {
   const cvValid = await tailoringValidService.generateTailoredCV(userA, jobA.id, 'balanced');
   assert.strictEqual(cvValid.selectedExperiences.length, 1);
   assert.strictEqual(cvValid.selectedExperiences[0].experienceId, expA.id);
+  // Company/title come from the Lake, never from the model
+  assert.strictEqual(cvValid.selectedExperiences[0].company, expA.company);
+  // "$45M" is not in the cited evidence ("Statement", 100%): the bullet must be removed and reported
+  assert.ok(!cvValid.selectedExperiences[0].bullets.some((b) => b.includes('45')), 'Ungrounded number must be removed');
+  assert.ok((cvValid.groundingIssues || []).some((i) => i.text.includes('45')), 'Removed bullet must be reported');
   console.log('    ✓ TEST 4 — Tailoring com referências válidas: IA retorna experienceIds pertencentes ao usuário → permitido');
+  console.log('    ✓ TEST 4b — Bullet com número ausente da evidência citada é removido e reportado');
 
   // TEST 5 — Tailoring com referência inexistente
   const mockAIInexistent: any = {
@@ -432,15 +438,14 @@ export async function runAIValidationTests(): Promise<void> {
     !persistedInRepo?.selectedExperiences[0].evidenceCitations.includes('ev_fake_hallucinated_999'),
     'Fake evidence citations must never reach the repository'
   );
-  assert.strictEqual(
-    persistedInRepo?.selectedSkills[0].evidenceRef,
-    '',
-    'Invalid skill evidenceRef must be stripped before repository persistence'
+  // Skills and projects that do not exist in the user's Lake never reach the repository
+  assert.ok(
+    !persistedInRepo?.selectedSkills.some((sk) => sk.name === 'Financial Modeling'),
+    'Skill absent from the Lake must be removed before repository persistence'
   );
-  assert.strictEqual(
-    persistedInRepo?.selectedProjects[0].projectId,
-    undefined,
-    'Invalid project ID must be stripped before repository persistence'
+  assert.ok(
+    !persistedInRepo?.selectedProjects.some((p) => p.projectId === 'proj_foreign_or_fake' || p.name === 'Project Phantom'),
+    'Project absent from the Lake must be removed before repository persistence'
   );
   console.log('    ✓ TEST 8 — Persistência não recebe referência inválida: Nenhum dado inválido chega ao repository');
 

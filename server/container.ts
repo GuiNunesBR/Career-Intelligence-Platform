@@ -55,7 +55,8 @@ export const tailoringService = new TailoringService(
   tailoringRepository,
   jobRepository,
   careerLakeRepository,
-  aiService
+  aiService,
+  analysisRepository
 );
 
 export const applicationService = new ApplicationService(applicationRepository);

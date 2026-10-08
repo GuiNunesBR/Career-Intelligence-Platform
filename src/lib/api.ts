@@ -75,6 +75,18 @@ async function request<T>(endpoint: string, options: RequestInit = {}): Promise<
   return res.json();
 }
 
+export interface AtsCheckResult {
+  pages: number;
+  sectionsFound: string[];
+  sectionsInOrder: boolean;
+  contactFound: { email: boolean; phone: boolean };
+  keywordsYouHave: Array<{ keyword: string; inCv: boolean }>;
+  keywordsMissingFromLake: string[];
+  keywordCoverage: number | null;
+  warnings: string[];
+  extractedText: string;
+}
+
 export const api = {
   // Auth
   login: (credentials: { email: string; password: string }) =>
@@ -170,6 +182,18 @@ export const api = {
       method: 'POST',
       body: JSON.stringify({ mode, language }),
     }),
+  getAtsCheck: (jobId: string) => request<{ atsCheck: AtsCheckResult }>(`/api/jobs/${jobId}/cv/ats-check`),
+  /** Downloads the ATS-friendly PDF of the tailored CV. */
+  downloadCvPdf: async (jobId: string): Promise<{ blob: Blob; fileName: string }> => {
+    const res = await fetch(`/api/jobs/${jobId}/cv/pdf`, { headers: { Authorization: `Bearer ${getStoredToken()}` } });
+    if (!res.ok) {
+      const errorData = await res.json().catch(() => ({}));
+      throw new Error(errorData.error?.message || errorData.message || `HTTP ${res.status}`);
+    }
+    const disposition = res.headers.get('Content-Disposition') || '';
+    const match = disposition.match(/filename\*=UTF-8''([^;]+)/);
+    return { blob: await res.blob(), fileName: match ? decodeURIComponent(match[1]) : 'CV.pdf' };
+  },
   getCoverLetter: (jobId: string) => request<{ coverLetter: CoverLetter | null }>(`/api/jobs/${jobId}/cover-letter`),
   generateCoverLetter: (jobId: string) =>
     request<{ coverLetter: CoverLetter }>(`/api/jobs/${jobId}/cover-letter`, {

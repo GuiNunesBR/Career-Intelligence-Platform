@@ -1,6 +1,9 @@
-import { ITailoringRepository, IJobRepository, ICareerLakeRepository } from '../repositories/interfaces.js';
+import { ITailoringRepository, IJobRepository, ICareerLakeRepository, IAnalysisRepository } from '../repositories/interfaces.js';
 import { AIService } from './ai.service.js';
-import { TailoringCVAIOutputSchema, CoverLetterAIOutputSchema } from '../validation/ai_schemas.js';
+import { CoverLetterAIOutputSchema } from '../validation/ai_schemas.js';
+import { groundTailoredCV } from './cv-grounding.service.js';
+import { detectLanguage } from '../../src/shared/text.js';
+import { randomUUID } from 'crypto';
 import { TailoredCV, CoverLetter, TailoringMode } from '../../src/shared/types.js';
 
 export class TailoringService {
@@ -8,7 +11,9 @@ export class TailoringService {
     private tailoringRepo: ITailoringRepository,
     private jobRepo: IJobRepository,
     private lakeRepo: ICareerLakeRepository,
-    private ai: AIService
+    private ai: AIService,
+    /** Optional: when present, the job's fit analysis guides which evidences the CV uses. */
+    private analysisRepo?: IAnalysisRepository
   ) {}
 
   async getTailoredCV(userId: string, jobId: string): Promise<TailoredCV | null> {
@@ -32,57 +37,56 @@ export class TailoringService {
     }
 
     const lake = await this.lakeRepo.getUserLake(userId);
-    const rawCvData = await this.ai.tailorCV(lake, job, mode, language);
+    // CV language follows the job posting unless the user chose one
+    const cvLanguage = language || detectLanguage(`${job.title}\n${job.description}`);
+    const analysis = this.analysisRepo ? await this.analysisRepo.getAnalysisForJob(userId, jobId) : null;
 
-    // 1. Rigorous AI Output Schema Validation
-    const parsedCV = TailoringCVAIOutputSchema.parse(rawCvData);
+    // 1st attempt; if the fact checker rejects content, one retry with the reasons, then keep what passed
+    let raw: any = await this.ai.tailorCV(lake, job, mode, { language: cvLanguage, analysis });
+    let grounded = groundTailoredCV(raw, lake, userId, cvLanguage);
+    if (grounded.issues.length > 0) {
+      const feedback = grounded.issues.map((i) => `${i.where}: "${i.text}" → ${i.reason}`);
+      try {
+        const retryRaw: any = await this.ai.tailorCV(lake, job, mode, { language: cvLanguage, analysis, feedback });
+        const retry = groundTailoredCV(retryRaw, lake, userId, cvLanguage);
+        if (retry.issues.length < grounded.issues.length) {
+          raw = retryRaw;
+          grounded = retry;
+        }
+      } catch {
+        // Keep the first attempt (already grounded) if the retry fails
+      }
+    }
 
-    // 2. Ownership & Grounding Validation
-    // Validate that selectedExperiences exist in user's Career Lake and belong to userId
-    const validatedExperiences = parsedCV.selectedExperiences.filter((exp) =>
-      lake.experiences.some((e) => e.id === exp.experienceId && e.userId === userId)
-    );
-
-    // If AI proposed experiences but all failed grounding (100% invalid/hallucinated/foreign)
-    if (parsedCV.selectedExperiences.length > 0 && validatedExperiences.length === 0) {
+    // If the model proposed experiences but none belong to this user, nothing can be trusted
+    const proposed = Array.isArray(raw?.selectedExperiences) ? raw.selectedExperiences.length : 0;
+    if (proposed > 0 && grounded.selectedExperiences.length === 0) {
       throw new Error(
         'AI_OUTPUT_INVALID: All AI selected experiences failed grounding validation against the user Career Lake'
       );
     }
 
-    // Strip any hallucinated or foreign evidence citations within experiences
-    const userEvidenceIds = new Set(
-      lake.evidences.filter((ev) => ev.userId === userId).map((ev) => ev.id)
-    );
-
-    const sanitizedExperiences = validatedExperiences.map((exp) => ({
-      ...exp,
-      evidenceCitations: (exp.evidenceCitations || []).filter((id) => userEvidenceIds.has(id)),
-    }));
-
-    // Ground skills evidence references
-    const sanitizedSkills = (parsedCV.selectedSkills || []).map((skill) => ({
-      ...skill,
-      evidenceRef: skill.evidenceRef && userEvidenceIds.has(skill.evidenceRef) ? skill.evidenceRef : '',
-    }));
-
-    // Ground projects references (if projectId provided by AI, ensure it exists in lake and belongs to userId)
-    const userProjectIds = new Set(
-      lake.projects.filter((p) => p.userId === userId).map((p) => p.id)
-    );
-    const sanitizedProjects = (parsedCV.selectedProjects || []).map((proj) => ({
-      ...proj,
-      projectId: proj.projectId && userProjectIds.has(proj.projectId) ? proj.projectId : undefined,
-    }));
-
+    const removed = grounded.issues.length;
     const cv: TailoredCV = {
-      ...parsedCV,
-      id: `cv_${Date.now()}_${mode}`,
+      id: `cv_${randomUUID()}`,
       userId,
       jobId,
-      selectedExperiences: sanitizedExperiences,
-      selectedSkills: sanitizedSkills,
-      selectedProjects: sanitizedProjects,
+      mode,
+      language: cvLanguage as TailoredCV['language'],
+      headline: grounded.headline,
+      summary: grounded.summary,
+      selectedExperiences: grounded.selectedExperiences,
+      selectedSkills: grounded.selectedSkills,
+      selectedProjects: grounded.selectedProjects,
+      jobKeywords: Array.isArray(raw?.jobKeywords) ? raw.jobKeywords : [],
+      atsKeywordsMatched: Array.isArray(raw?.atsKeywordsMatched) ? raw.atsKeywordsMatched : [],
+      honestyAuditNotes: [
+        ...(Array.isArray(raw?.honestyAuditNotes) ? raw.honestyAuditNotes : []),
+        removed
+          ? `Checagem de fatos: ${removed} trecho(s) removido(s) por não terem fonte no Career Lake.`
+          : 'Checagem de fatos: todos os bullets citam evidências do Career Lake e todos os números foram encontrados nelas.',
+      ],
+      groundingIssues: grounded.issues,
       createdAt: new Date().toISOString(),
     };
 

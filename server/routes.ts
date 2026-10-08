@@ -26,6 +26,7 @@ import {
   SkillCreateSchema,
   EvidenceCreateSchema,
   JobParseSchema,
+  SearchAgentCreateSchema,
   JobCreateSchema,
   FitAnalysisRequestSchema,
   TailorCVRequestSchema,
@@ -44,6 +45,7 @@ export const apiRouter = express.Router();
 // ==========================================
 
 import { extractResumeText } from './services/pdf-extract.service.js';
+import { buildCvHtml, renderPdf, atsCheck } from './services/cv-render.service.js';
 
 apiRouter.post('/auth/login', authRateLimiter, validateBody(LoginSchema), async (req, res) => {
   try {
@@ -388,10 +390,40 @@ apiRouter.get('/jobs/:jobId/cv', authMiddleware, async (req: AuthenticatedReques
   }
 });
 
+// ATS-friendly PDF of the tailored CV (single column, real text layer)
+apiRouter.get('/jobs/:jobId/cv/pdf', authMiddleware, async (req: AuthenticatedRequest, res, next) => {
+  try {
+    const cv = await tailoringService.getTailoredCV(req.user!.id, req.params.jobId);
+    if (!cv) return res.status(404).json({ error: { code: 'NOT_FOUND', message: 'Gere o CV antes de exportar.' } });
+    const lake = await careerLakeService.getUserLake(req.user!.id);
+    const pdf = await renderPdf(buildCvHtml(cv, lake, req.user!.name));
+    const fileName = `CV - ${(lake.profile?.contact?.fullName || req.user!.name).replace(/[^\p{L}\p{N} _-]/gu, '')}.pdf`;
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename*=UTF-8''${encodeURIComponent(fileName)}`);
+    res.send(pdf);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// Reads the generated PDF back like an ATS and reports sections, contact and keyword coverage
+apiRouter.get('/jobs/:jobId/cv/ats-check', authMiddleware, async (req: AuthenticatedRequest, res, next) => {
+  try {
+    const cv = await tailoringService.getTailoredCV(req.user!.id, req.params.jobId);
+    if (!cv) return res.status(404).json({ error: { code: 'NOT_FOUND', message: 'Gere o CV antes da checagem ATS.' } });
+    const lake = await careerLakeService.getUserLake(req.user!.id);
+    const pdf = await renderPdf(buildCvHtml(cv, lake, req.user!.name));
+    res.json({ atsCheck: await atsCheck(pdf, cv, lake) });
+  } catch (err) {
+    next(err);
+  }
+});
+
 apiRouter.post('/jobs/:jobId/cv', authMiddleware, async (req: AuthenticatedRequest, res, next) => {
   try {
     const mode = req.body?.mode || 'balanced';
-    const language = req.body?.language || 'pt-br';
+    // No language chosen: the service follows the job posting's language
+    const language = req.body?.language;
     const cv = await tailoringService.generateTailoredCV(req.user!.id, req.params.jobId, mode, language);
     res.json({ cv });
   } catch (err) {
@@ -643,7 +675,7 @@ apiRouter.get('/search-agents', authMiddleware, async (req: AuthenticatedRequest
   }
 });
 
-apiRouter.post('/search-agents', authMiddleware, async (req: AuthenticatedRequest, res, next) => {
+apiRouter.post('/search-agents', authMiddleware, validateBody(SearchAgentCreateSchema), async (req: AuthenticatedRequest, res, next) => {
   try {
     const agent = await searchAgentRepository.create(req.user!.id, req.body);
     // If there's already an active search loop, it will pick this up on its next cycle.

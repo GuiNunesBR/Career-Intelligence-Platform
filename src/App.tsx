@@ -459,9 +459,10 @@ export default function App() {
     setActiveTab('job_search');
   };
 
+  // A search needs an agent (roles, levels, location): open the search tab to pick or create one
   const handleTriggerJobSearch = () => {
-    handleTriggerBackgroundJob('job_search_agent');
     setActiveTab('job_search');
+    showToast('Escolha um agente de busca e clique em "Executar Busca Agora".', 'info');
   };
 
   // Navigation router

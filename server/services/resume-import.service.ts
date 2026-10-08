@@ -9,7 +9,7 @@ import type {
   Project,
   Skill,
 } from '../../src/shared/types.js';
-import { normalizeForMatch } from '../../src/shared/text.js';
+import { normalizeForMatch, ungroundedNumbers } from '../../src/shared/text.js';
 
 // Turns the model's resume extraction into Lake records and checks it against the
 // original text in code: excerpts must exist in the resume, metrics must appear in their
@@ -69,10 +69,8 @@ function excerptConfidence(excerpt: string, normalizedResume: string): EvidenceC
 function groundedMetric(metric: string, excerpt: string): string | undefined {
   const m = metric.trim();
   if (!m) return undefined;
-  const digits = m.match(/\d+(?:[.,]\d+)?/g);
-  if (!digits) return undefined;
-  const normExcerpt = excerpt.replace(/\s/g, '');
-  return digits.every((d) => normExcerpt.includes(d)) ? m : undefined;
+  if (!/\d/.test(m)) return undefined;
+  return ungroundedNumbers(m, [excerpt]).length === 0 ? m : undefined;
 }
 
 function cleanHeadline(headline: string, contact: ContactInfo): string {

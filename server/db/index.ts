@@ -19,6 +19,9 @@ const ADDED_COLUMNS: Array<[table: string, column: string, type: string]> = [
   ['projects', 'origin', 'text'],
   ['skills', 'origin', 'text'],
   ['evidences', 'tools', 'text'],
+  ['tailored_cvs', 'language', 'text'],
+  ['tailored_cvs', 'job_keywords', 'text'],
+  ['tailored_cvs', 'grounding_issues', 'text'],
 ];
 for (const [table, column, type] of ADDED_COLUMNS) {
   const info = await client.execute(`PRAGMA table_info(\`${table}\`)`);

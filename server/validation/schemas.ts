@@ -73,6 +73,15 @@ export const EvidenceCreateSchema = z.object({
   tools: z.array(z.string()).optional(),
 });
 
+export const SearchAgentCreateSchema = z.object({
+  name: z.string().trim().min(1).max(100),
+  roles: z.array(z.string().trim().min(1).max(80)).min(1).max(10),
+  seniority: z.array(z.enum(['Estágio', 'Júnior', 'Pleno', 'Sênior', 'Especialista', 'Liderança'])).min(1),
+  location: z.string().max(100).optional(),
+  mode: z.string().max(50).optional(),
+  frequency: z.enum(['manual', '1h', '3h', 'daily']).default('manual'),
+});
+
 export const JobParseSchema = z.object({
   text: z.string().min(10, 'Job description text must be at least 10 characters'),
 });

@@ -15,6 +15,9 @@ export class SqliteTailoringRepository implements ITailoringRepository {
       selectedProjects: c.selectedProjects as any,
       atsKeywordsMatched: c.atsKeywordsMatched as string[],
       honestyAuditNotes: c.honestyAuditNotes as string[],
+      language: (c.language as TailoredCV['language']) || undefined,
+      jobKeywords: c.jobKeywords || undefined,
+      groundingIssues: c.groundingIssues || undefined,
       createdAt: c.createdAt,
     }));
   }
@@ -31,6 +34,9 @@ export class SqliteTailoringRepository implements ITailoringRepository {
       selectedProjects: c.selectedProjects as any,
       atsKeywordsMatched: c.atsKeywordsMatched as string[],
       honestyAuditNotes: c.honestyAuditNotes as string[],
+      language: (c.language as TailoredCV['language']) || undefined,
+      jobKeywords: c.jobKeywords || undefined,
+      groundingIssues: c.groundingIssues || undefined,
       createdAt: c.createdAt,
     };
   }
@@ -47,6 +53,9 @@ export class SqliteTailoringRepository implements ITailoringRepository {
         selectedProjects: cv.selectedProjects,
         atsKeywordsMatched: cv.atsKeywordsMatched,
         honestyAuditNotes: cv.honestyAuditNotes,
+        language: cv.language ?? null,
+        jobKeywords: cv.jobKeywords ?? null,
+        groundingIssues: cv.groundingIssues ?? null,
       }).where(and(eq(tailoredCvs.userId, userId), eq(tailoredCvs.id, existing.id))).returning();
       
       return {
@@ -57,6 +66,9 @@ export class SqliteTailoringRepository implements ITailoringRepository {
         selectedProjects: updated.selectedProjects as any,
         atsKeywordsMatched: updated.atsKeywordsMatched as string[],
         honestyAuditNotes: updated.honestyAuditNotes as string[],
+        language: (updated.language as TailoredCV['language']) || undefined,
+        jobKeywords: updated.jobKeywords || undefined,
+        groundingIssues: updated.groundingIssues || undefined,
         createdAt: updated.createdAt,
       };
     } else {
@@ -72,6 +84,9 @@ export class SqliteTailoringRepository implements ITailoringRepository {
         selectedProjects: cv.selectedProjects,
         atsKeywordsMatched: cv.atsKeywordsMatched,
         honestyAuditNotes: cv.honestyAuditNotes,
+        language: cv.language ?? null,
+        jobKeywords: cv.jobKeywords ?? null,
+        groundingIssues: cv.groundingIssues ?? null,
       }).returning();
       
       return {
@@ -82,6 +97,9 @@ export class SqliteTailoringRepository implements ITailoringRepository {
         selectedProjects: inserted.selectedProjects as any,
         atsKeywordsMatched: inserted.atsKeywordsMatched as string[],
         honestyAuditNotes: inserted.honestyAuditNotes as string[],
+        language: (inserted.language as TailoredCV['language']) || undefined,
+        jobKeywords: inserted.jobKeywords || undefined,
+        groundingIssues: inserted.groundingIssues || undefined,
         createdAt: inserted.createdAt,
       };
     }
