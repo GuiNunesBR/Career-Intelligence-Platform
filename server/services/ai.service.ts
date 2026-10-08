@@ -3,7 +3,8 @@ import {
   performEvidenceFitAnalysis,
   generateTailoredCVContent,
   generateCoverLetterContent,
-  parseResumeToLake
+  parseResumeToLake,
+  ParsedResume,
 } from '../ai.js';
 import { JobParsingAIOutputSchema } from '../validation/ai_schemas.js';
 import {
@@ -32,7 +33,7 @@ export class AIService {
     };
   }
 
-  async parseResumeToLake(rawText: string): Promise<any> {
+  async parseResumeToLake(rawText: string): Promise<ParsedResume> {
     return parseResumeToLake(rawText);
   }
 
@@ -43,9 +44,10 @@ export class AIService {
   async tailorCV(
     lake: UserCareerLake,
     job: Job,
-    mode: TailoringMode
+    mode: TailoringMode,
+    language?: string
   ): Promise<Omit<TailoredCV, 'id' | 'userId' | 'createdAt'>> {
-    return generateTailoredCVContent(lake, job, mode);
+    return generateTailoredCVContent(lake, job, mode, language);
   }
 
   async generateCoverLetter(

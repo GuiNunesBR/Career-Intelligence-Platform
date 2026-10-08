@@ -163,10 +163,10 @@ export const api = {
 
   // Tailored Documents
   getCV: (jobId: string) => request<{ cv: TailoredCV | null }>(`/api/jobs/${jobId}/cv`),
-  generateCV: (jobId: string, mode: TailoringMode) =>
+  generateCV: (jobId: string, mode: TailoringMode, language?: string) =>
     request<{ cv: TailoredCV }>(`/api/jobs/${jobId}/cv`, {
       method: 'POST',
-      body: JSON.stringify({ mode }),
+      body: JSON.stringify({ mode, language }),
     }),
   getCoverLetter: (jobId: string) => request<{ coverLetter: CoverLetter | null }>(`/api/jobs/${jobId}/cover-letter`),
   generateCoverLetter: (jobId: string) =>

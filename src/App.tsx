@@ -242,30 +242,33 @@ export default function App() {
       if (jobId) {
         showToast('Processando CV em background... Isso pode levar alguns segundos.', 'info');
         
-        let attempts = 0;
-        while (attempts < 30) {
+        // Parsing may retry the model several times; poll for up to ~5 minutes
+        let completed = false;
+        for (let attempts = 0; attempts < 150 && !completed; attempts++) {
           await new Promise(r => setTimeout(r, 2000));
           const jobsRes = await api.getBackgroundJobs();
           const job = jobsRes.backgroundJobs.find((j) => j.id === jobId);
-          if (job) {
-            if (job.status === 'completed') {
-              break;
-            } else if (job.status === 'failed' || job.status === 'cancelled') {
-              throw new Error('Falha no processamento do background worker');
-            }
+          if (job?.status === 'completed') {
+            completed = true;
+          } else if (job?.status === 'failed' || job?.status === 'cancelled') {
+            const lastError = [...(job.logs || [])].reverse().find((l) => l.includes('ERROR:'));
+            throw new Error(lastError ? lastError.split('ERROR:')[1].trim() : 'Falha no processamento do currículo.');
           }
-          attempts++;
+        }
+        if (!completed) {
+          showToast('O currículo ainda está sendo processado. Recarregue o Career Lake em instantes.', 'info');
+          return;
         }
       }
 
       // Refresh career lake
       if (currentUser) {
         await loadUserData(currentUser.id);
-        showToast('Currículo processado e dados importados com sucesso!', 'success');
+        showToast('Currículo processado e dados importados.', 'success');
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
-      showToast('Falha ao processar currículo', 'error');
+      showToast(err.message || 'Falha ao processar currículo', 'error');
     }
   };
 
@@ -274,21 +277,38 @@ export default function App() {
     setIsAnalyzingJob(true);
     try {
       // 1. Parse structured job
-      const { parsed } = await api.parseJob(text);
+      let parsed;
+      try {
+        ({ parsed } = await api.parseJob(text));
+      } catch (err: any) {
+        showToast(err.message || 'Não foi possível interpretar a vaga.', 'error');
+        throw err;
+      }
       // 2. Save job to user repository
       const { job } = await api.saveJob(parsed);
       setJobs((prev) => [job, ...prev]);
       setSelectedJobId(job.id);
 
-      // 3. Run deep evidence fit analysis
-      const { analysis } = await api.analyzeJob(job.id);
-      setCurrentAnalysis(analysis);
+      // 3. Run deep evidence fit analysis (job stays saved as "not analyzed" if this fails)
+      try {
+        const { analysis } = await api.analyzeJob(job.id);
+        setCurrentAnalysis(analysis);
+      } catch (err: any) {
+        setCurrentAnalysis(null);
+        showToast(`Vaga salva, mas não analisada. ${err.message || ''}`.trim(), 'error');
+        return job;
+      }
 
       // 4. Auto-generate initial balanced CV view
-      const { cv } = await api.generateCV(job.id, 'balanced');
-      setCurrentCV(cv);
+      try {
+        const { cv } = await api.generateCV(job.id, 'balanced');
+        setCurrentCV(cv);
+      } catch (err: any) {
+        showToast(`Vaga analisada, mas o CV não foi gerado. ${err.message || ''}`.trim(), 'error');
+        return job;
+      }
 
-      showToast(`Vaga "${job.title}" analisada com sucesso via Evidence Matrix!`);
+      showToast(`Vaga "${job.title}" analisada.`);
       return job;
     } finally {
       setIsAnalyzingJob(false);
@@ -308,6 +328,8 @@ export default function App() {
 
       showToast(`Análise de "${job.title}" enviada para a fila de segundo plano!`, 'info');
       setActiveTab('job_search');
+    } catch (err: any) {
+      showToast(err.message || 'Não foi possível interpretar a vaga.', 'error');
     } finally {
       setIsAnalyzingJob(false);
     }
@@ -318,7 +340,9 @@ export default function App() {
     try {
       const { analysis } = await api.analyzeJob(jobId);
       setCurrentAnalysis(analysis);
-      showToast('Análise de fit atualizada contra o Career Lake!');
+      showToast('Análise de fit atualizada contra o Career Lake.');
+    } catch (err: any) {
+      showToast(err.message || 'Não foi possível analisar a vaga.', 'error');
     } finally {
       setIsAnalyzingJob(false);
     }
@@ -328,9 +352,11 @@ export default function App() {
   const handleGenerateCV = async (jobId: string, mode: TailoringMode, language?: string) => {
     setIsGeneratingCV(true);
     try {
-      const { cv } = await api.generateCV(jobId, mode);
+      const { cv } = await api.generateCV(jobId, mode, language);
       setCurrentCV(cv);
-      showToast(`CV gerado no modo ${mode.toUpperCase()} com proveniência auditável!`);
+      showToast(`CV gerado no modo ${mode.toUpperCase()}.`);
+    } catch (err: any) {
+      showToast(err.message || 'Não foi possível gerar o CV.', 'error');
     } finally {
       setIsGeneratingCV(false);
     }

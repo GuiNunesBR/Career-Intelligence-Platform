@@ -73,8 +73,8 @@ export const JobSearchView: React.FC<JobSearchViewProps> = ({
         })
       );
       
-      // Sort by functional fit score
-      jobsWithFit.sort((a, b) => (b.fit?.dimensions.functionalFit || 0) - (a.fit?.dimensions.functionalFit || 0));
+      // Sort by functional fit score; jobs without an analysis go last
+      jobsWithFit.sort((a, b) => (b.fit?.dimensions.functionalFit ?? -1) - (a.fit?.dimensions.functionalFit ?? -1));
       setFoundJobs(jobsWithFit);
     } catch (err) {
       console.error(err);
@@ -307,13 +307,22 @@ export const JobSearchView: React.FC<JobSearchViewProps> = ({
               foundJobs.map(({ job, fit }) => (
                 <div key={job.id} className="border border-neutral-200 rounded-lg p-4 hover:border-neutral-300 transition-colors flex flex-col md:flex-row gap-4">
                   {/* Score */}
-                  <div className="flex-shrink-0 flex items-center justify-center">
-                    <div className={`w-14 h-14 rounded-full border-4 flex items-center justify-center font-bold text-lg
-                      ${fit?.dimensions.functionalFit && fit.dimensions.functionalFit >= 80 ? 'border-emerald-500 text-emerald-700 bg-emerald-50' : 
-                        fit?.dimensions.functionalFit && fit.dimensions.functionalFit >= 50 ? 'border-amber-500 text-amber-700 bg-amber-50' : 
-                        'border-rose-500 text-rose-700 bg-rose-50'}`}>
-                      {fit?.dimensions.functionalFit || 0}
-                    </div>
+                  <div className="flex-shrink-0 flex flex-col items-center justify-center gap-1">
+                    {fit ? (
+                      <div className={`w-14 h-14 rounded-full border-4 flex items-center justify-center font-bold text-lg
+                        ${fit.dimensions.functionalFit >= 80 ? 'border-emerald-500 text-emerald-700 bg-emerald-50' :
+                          fit.dimensions.functionalFit >= 50 ? 'border-amber-500 text-amber-700 bg-amber-50' :
+                          'border-rose-500 text-rose-700 bg-rose-50'}`}>
+                        {fit.dimensions.functionalFit}
+                      </div>
+                    ) : (
+                      <>
+                        <div className="w-14 h-14 rounded-full border-4 border-neutral-200 text-neutral-400 bg-neutral-50 flex items-center justify-center font-bold text-lg">
+                          —
+                        </div>
+                        <span className="text-[10px] text-neutral-400">não analisada</span>
+                      </>
+                    )}
                   </div>
 
                   {/* Details */}

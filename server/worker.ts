@@ -6,6 +6,7 @@ import {
   aiService
 } from './container.js';
 import { jobScraperService } from './services/job-scraper.service.js';
+import { AIError } from './ai-provider.js';
 import { BackgroundJob } from '../src/shared/types.js';
 
 const MAX_RETRIES = 3;
@@ -80,26 +81,32 @@ export class BackgroundWorker {
         await jobQueueRepository.saveBackgroundJob(userId, job);
 
         let analyzedCount = 0;
-        for (const j of jobs) {
-          const analysisData = await aiService.analyzeFit(lake, j);
-          await analysisRepository.saveAnalysis(userId, {
-            ...analysisData,
-            id: `fit_${Date.now()}_${j.id}`,
-            userId,
-            jobId: j.id,
-            createdAt: new Date().toISOString(),
-          });
-          analyzedCount++;
-          job.progress = Math.round(30 + (analyzedCount / Math.max(1, jobs.length)) * 60);
-          job.logs.push(`[${new Date().toISOString()}] Re-analyzed fit for: "${j.title}" at ${j.company}`);
+        let failedCount = 0;
+        for (const [idx, j] of jobs.entries()) {
+          try {
+            const analysisData = await aiService.analyzeFit(lake, j);
+            await analysisRepository.saveAnalysis(userId, {
+              ...analysisData,
+              id: `fit_${Date.now()}_${j.id}`,
+              userId,
+              jobId: j.id,
+              createdAt: new Date().toISOString(),
+            });
+            analyzedCount++;
+            job.logs.push(`[${new Date().toISOString()}] Re-analyzed fit for: "${j.title}" at ${j.company}`);
+          } catch (e: any) {
+            failedCount++;
+            job.logs.push(`[${new Date().toISOString()}] Fit analysis failed for "${j.title}": ${e.message}`);
+          }
+          job.progress = Math.round(30 + ((idx + 1) / Math.max(1, jobs.length)) * 60);
           await jobQueueRepository.saveBackgroundJob(userId, job);
         }
 
         job.status = 'completed';
         job.progress = 100;
         job.finishedAt = new Date().toISOString();
-        job.result = { jobsProcessed: analyzedCount, status: 'success' };
-        job.logs.push(`[${new Date().toISOString()}] Successfully completed batch re-analysis of ${analyzedCount} jobs.`);
+        job.result = { jobsProcessed: analyzedCount, jobsFailed: failedCount, status: failedCount ? 'partial' : 'success' };
+        job.logs.push(`[${new Date().toISOString()}] Batch re-analysis finished: ${analyzedCount} analyzed, ${failedCount} failed.`);
         await jobQueueRepository.saveBackgroundJob(userId, job);
       } else if (job.jobType === 'evidence_audit') {
         job.progress = 40;
@@ -146,52 +153,38 @@ export class BackgroundWorker {
           await careerLakeRepository.updateProfile(userId, parsedData.profile);
         }
 
-        if (parsedData.experiences && Array.isArray(parsedData.experiences)) {
-          for (const exp of parsedData.experiences) {
-            await careerLakeRepository.addExperience(userId, {
-              title: exp.title || "Cargo",
-              company: exp.company || "Empresa",
-              domain: exp.domain || "General",
-              startDate: exp.startDate || "2020-01",
-              endDate: exp.endDate,
-              isCurrent: exp.isCurrent,
-              location: exp.location || "Remote",
-              employmentType: exp.employmentType || "full-time",
-              description: exp.description || "Descrição ausente."
-            });
-          }
+        // Entries without the identifying fields are skipped rather than filled with placeholders
+        const experiences = parsedData.experiences.filter((exp) => exp.title.trim() && exp.company.trim());
+        for (const exp of experiences) {
+          await careerLakeRepository.addExperience(userId, {
+            title: exp.title,
+            company: exp.company,
+            domain: exp.domain,
+            startDate: exp.startDate,
+            endDate: exp.endDate || undefined,
+            isCurrent: exp.isCurrent,
+            location: exp.location,
+            employmentType: exp.employmentType as any,
+            description: exp.description,
+          });
         }
-        if (parsedData.skills && Array.isArray(parsedData.skills)) {
-          for (const skill of parsedData.skills) {
-            await careerLakeRepository.addSkill(userId, {
-              name: skill.name || "Skill",
-              category: skill.category || "Functional",
-              proficiency: skill.proficiency || "Competent",
-              yearsExperience: skill.yearsExperience || 1
-            });
-          }
-        }
-        if (parsedData.projects && Array.isArray(parsedData.projects)) {
-          for (const proj of parsedData.projects) {
-            await careerLakeRepository.addProject(userId, {
-              name: proj.name || "Projeto",
-              domain: proj.domain || "General",
-              role: proj.role || "Membro",
-              description: proj.description || "",
-              metrics: proj.metrics || "",
-              technologies: proj.technologies || []
-            });
-          }
+        for (const skill of parsedData.skills) {
+          await careerLakeRepository.addSkill(userId, {
+            name: skill.name,
+            category: skill.category as any,
+            proficiency: skill.proficiency as any,
+            yearsExperience: skill.yearsExperience,
+          });
         }
 
         job.status = 'completed';
         job.progress = 100;
         job.finishedAt = new Date().toISOString();
-        job.result = { 
-          parsed: true, 
-          experiencesCount: parsedData.experiences?.length || 0,
-          skillsCount: parsedData.skills?.length || 0,
-          projectsCount: parsedData.projects?.length || 0
+        job.result = {
+          parsed: true,
+          experiencesCount: experiences.length,
+          experiencesSkipped: parsedData.experiences.length - experiences.length,
+          skillsCount: parsedData.skills.length,
         };
         job.logs.push(`[${new Date().toISOString()}] CV successfully parsed and inserted into Career Lake.`);
         await jobQueueRepository.saveBackgroundJob(userId, job);
@@ -210,49 +203,48 @@ export class BackgroundWorker {
         job.progress = 20;
         job.logs.push(`[${new Date().toISOString()}] Started Job Search Agent for user ${userId}.`);
         await jobQueueRepository.saveBackgroundJob(userId, job);
-        
+
         job.logs.push(`[${new Date().toISOString()}] Searching external job boards...`);
         job.progress = 40;
         await jobQueueRepository.saveBackgroundJob(userId, job);
 
-        await new Promise(r => setTimeout(r, 2000));
-        
         const roles = job.payload?.roles || 'Software Engineer';
         const location = job.payload?.location || 'Anywhere';
         const mode = job.payload?.mode || 'Remote';
         const seniority = job.payload?.seniority || '';
-        
+
         job.logs.push(`[${new Date().toISOString()}] Searching for: ${roles} | Location: ${location} | Mode: ${mode}`);
         await jobQueueRepository.saveBackgroundJob(userId, job);
-        
+
         const existingJobs = await jobRepository.getJobs(userId);
         const existingUrls = new Set(existingJobs.map(j => j.url).filter(Boolean));
-        
+
         // Use external API (RapidAPI JSearch) to find real jobs
         const scrapedJobs = await jobScraperService.searchJobs(roles, location, mode, 50);
-        
+
         const newJobsToAnalyze = scrapedJobs.filter(j => {
           if (j.url && existingUrls.has(j.url)) return false;
-          
+
           const lowerTitle = j.title.toLowerCase();
           const isIntern = lowerTitle.includes('estágio') || lowerTitle.includes('estagio') || lowerTitle.includes('intern');
           const isCoordinator = lowerTitle.includes('coordenador') || lowerTitle.includes('coord');
           const isManager = lowerTitle.includes('gerente') || lowerTitle.includes('manager');
-          
+
           const sLower = seniority.toLowerCase();
           if (!sLower.includes('liderança') && !sLower.includes('especialista') && (isCoordinator || isManager)) return false;
           if (!sLower.includes('estágio') && !sLower.includes('estagio') && isIntern) return false;
-          
+
           return true;
         }).slice(0, 15);
 
         job.logs.push(`[${new Date().toISOString()}] Encontradas ${newJobsToAnalyze.length} vagas NOVAS na página. Iniciando processamento de IA...`);
         await jobQueueRepository.saveBackgroundJob(userId, job);
-        
+
         let processed = 0;
-        const evaluatedJobs = [];
-        
+        const evaluatedJobs: Array<{ job: any; analysis: any | null }> = [];
+
         for (const mJob of newJobsToAnalyze) {
+          let tempJob: any = null;
           try {
             let fullDescription = '';
             if (mJob.url) {
@@ -262,51 +254,63 @@ export class BackgroundWorker {
               // avoid immediate rate limit from LinkedIn
               await new Promise(r => setTimeout(r, 1000));
             }
-            
-            const rawTextToAnalyze = fullDescription ? 
-              `Vaga: ${mJob.title}\nEmpresa: ${mJob.company}\nLocal: ${mJob.location}\nDescrição:\n${fullDescription}` : 
-              mJob.rawText;
-              
-            const parsed = await aiService.parseJob(rawTextToAnalyze);
-            const jobId = `job_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`;
-            const tempJob = {
+
+            const now = new Date().toISOString();
+            tempJob = {
               ...mJob,
-              id: jobId,
+              id: `job_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`,
               userId,
-              rawText: rawTextToAnalyze,
-              createdAt: new Date().toISOString(),
-              updatedAt: new Date().toISOString(),
-              requirements: parsed.requirements
+              createdAt: now,
+              updatedAt: now,
+              requirements: [],
             };
-            
-            job.logs.push(`[${new Date().toISOString()}] Found: "${tempJob.title}" at ${tempJob.company}. Running Fit Analysis...`);
-            await jobQueueRepository.saveBackgroundJob(userId, job);
-            
-            const analysisData = await aiService.analyzeFit(lake, tempJob);
-            evaluatedJobs.push({ job: tempJob, analysis: analysisData });
-            
+
+            if (!fullDescription) {
+              // The scraper's stub text is not a job description: analyzing it would produce a meaningless score
+              job.logs.push(`[${new Date().toISOString()}] Sem descrição completa para "${mJob.title}". Vaga salva como não analisada.`);
+              evaluatedJobs.push({ job: tempJob, analysis: null });
+            } else {
+              const rawTextToAnalyze = `Vaga: ${mJob.title}\nEmpresa: ${mJob.company}\nLocal: ${mJob.location}\nDescrição:\n${fullDescription}`;
+              tempJob.rawText = rawTextToAnalyze;
+              tempJob.description = fullDescription;
+
+              const parsed = await aiService.parseJob(rawTextToAnalyze);
+              tempJob.requirements = parsed.requirements;
+              tempJob.seniority = parsed.seniority;
+
+              job.logs.push(`[${new Date().toISOString()}] Found: "${tempJob.title}" at ${tempJob.company}. Running Fit Analysis...`);
+              await jobQueueRepository.saveBackgroundJob(userId, job);
+
+              const analysisData = await aiService.analyzeFit(lake, tempJob);
+              evaluatedJobs.push({ job: tempJob, analysis: analysisData });
+            }
           } catch (e: any) {
-            job.logs.push(`[${new Date().toISOString()}] Erro ao analisar vaga "${mJob.title}": ${e.message}`);
+            job.logs.push(`[${new Date().toISOString()}] Erro ao analisar vaga "${mJob.title}": ${e.message}. Vaga salva como não analisada.`);
+            if (tempJob) evaluatedJobs.push({ job: tempJob, analysis: null });
           }
-          
+
           processed++;
           job.progress = 40 + (processed * (50 / newJobsToAnalyze.length));
-          
+
           if (processed < newJobsToAnalyze.length) {
             job.logs.push(`[${new Date().toISOString()}] Waiting 12s to avoid Gemini API Rate Limits...`);
             await jobQueueRepository.saveBackgroundJob(userId, job);
             await new Promise(r => setTimeout(r, 12000));
           }
         }
-        
-        // Evaluate and save top 10
-        evaluatedJobs.sort((a, b) => b.analysis.dimensions.functionalFit - a.analysis.dimensions.functionalFit);
-        const topJobs = evaluatedJobs.slice(0, 10);
 
-        job.logs.push(`[${new Date().toISOString()}] Salvando o Top ${topJobs.length} vagas de ${evaluatedJobs.length} analisadas...`);
-        
-        for (const item of topJobs) {
+        // Save the top 10 analyzed jobs, plus every job that could not be analyzed (so none silently disappear)
+        const analyzed = evaluatedJobs
+          .filter((item) => item.analysis)
+          .sort((a, b) => b.analysis.dimensions.functionalFit - a.analysis.dimensions.functionalFit);
+        const notAnalyzed = evaluatedJobs.filter((item) => !item.analysis);
+        const toSave = [...analyzed.slice(0, 10), ...notAnalyzed];
+
+        job.logs.push(`[${new Date().toISOString()}] Salvando ${Math.min(10, analyzed.length)} vagas analisadas (de ${analyzed.length}) e ${notAnalyzed.length} não analisadas...`);
+
+        for (const item of toSave) {
           await jobRepository.saveJob(userId, item.job);
+          if (!item.analysis) continue;
           await analysisRepository.saveAnalysis(userId, {
             ...item.analysis,
             id: `fit_${Date.now()}_${item.job.id}`,
@@ -315,11 +319,16 @@ export class BackgroundWorker {
             createdAt: new Date().toISOString()
           });
         }
-        
+
         job.status = 'completed';
         job.progress = 100;
         job.finishedAt = new Date().toISOString();
-        job.result = { jobsFound: scrapedJobs.length, topFitSaved: topJobs.length, status: 'success' };
+        job.result = {
+          jobsFound: scrapedJobs.length,
+          topFitSaved: Math.min(10, analyzed.length),
+          notAnalyzedSaved: notAnalyzed.length,
+          status: notAnalyzed.length ? 'partial' : 'success',
+        };
         job.logs.push(`[${new Date().toISOString()}] Job Search completed successfully.`);
         await jobQueueRepository.saveBackgroundJob(userId, job);
       } else {
@@ -339,14 +348,17 @@ export class BackgroundWorker {
       job.retryCount = (job.retryCount || 0) + 1;
       job.logs.push(`[${new Date().toISOString()}] ERROR: ${err.message || 'Execution error'}`);
 
-      if (job.retryCount < MAX_RETRIES) {
+      // Configuration errors (missing key, unknown model) won't fix themselves on retry
+      const permanent = err instanceof AIError && (err.code === 'AI_NOT_CONFIGURED' || err.code === 'AI_MODEL_NOT_FOUND');
+
+      if (!permanent && job.retryCount < MAX_RETRIES) {
         job.status = 'queued';
         job.progress = 0;
         job.logs.push(`[${new Date().toISOString()}] Re-queuing job for retry attempt ${job.retryCount + 1}/${MAX_RETRIES}`);
       } else {
         job.status = 'failed';
         job.finishedAt = new Date().toISOString();
-        job.logs.push(`[${new Date().toISOString()}] Job marked as failed after ${MAX_RETRIES} attempts.`);
+        job.logs.push(`[${new Date().toISOString()}] Job marked as failed after ${job.retryCount} attempt(s).`);
       }
 
       try {
