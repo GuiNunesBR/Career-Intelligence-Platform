@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 interface NewUserModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onCreateUser: (email: string, name: string, role: string, password?: string) => Promise<void>;
+  onCreateUser: (email: string, name: string, role: string, password: string) => Promise<void>;
 }
 
 export const NewUserModal: React.FC<NewUserModalProps> = ({
@@ -23,6 +23,10 @@ export const NewUserModal: React.FC<NewUserModalProps> = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email.trim() || !name.trim()) return;
+    if (password.length < 10) {
+      setError('A senha precisa ter pelo menos 10 caracteres.');
+      return;
+    }
 
     setIsSubmitting(true);
     setError(null);
@@ -31,7 +35,7 @@ export const NewUserModal: React.FC<NewUserModalProps> = ({
         email.trim(),
         name.trim(),
         role.trim() || 'Professional',
-        password.trim() || undefined
+        password
       );
       onClose();
     } catch (err: any) {
@@ -97,16 +101,18 @@ export const NewUserModal: React.FC<NewUserModalProps> = ({
           </div>
 
           <div>
-            <label className="block font-medium text-neutral-700 mb-1">Senha de Acesso (opcional)</label>
+            <label className="block font-medium text-neutral-700 mb-1">Senha de Acesso *</label>
             <input
+              required
+              minLength={10}
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder="Padrão: CareerLake@2026 (mínimo 8 caracteres)"
+              placeholder="Mínimo 10 caracteres"
               className="w-full p-2 border border-neutral-300 rounded focus:ring-1 focus:ring-neutral-900 outline-none"
             />
             <p className="text-[10px] text-neutral-400 mt-0.5">
-              Armazenada exclusivamente como hash bcrypt/argon2id seguro.
+              Armazenada apenas como hash bcrypt.
             </p>
           </div>
 

@@ -77,7 +77,6 @@ async function request<T>(endpoint: string, options: RequestInit = {}): Promise<
 
 export const api = {
   // Auth
-  getUsers: () => request<{ users: SanitizedUser[] }>('/api/auth/users'),
   login: (credentials: { email: string; password: string }) =>
     request<{ session: AuthSession; user: SanitizedUser }>('/api/auth/login', {
       method: 'POST',
@@ -100,8 +99,8 @@ export const api = {
   register: (
     email: string,
     name: string,
-    role?: string,
-    password?: string
+    role: string | undefined,
+    password: string
   ) =>
     request<{ session: AuthSession; user: SanitizedUser }>('/api/auth/register', {
       method: 'POST',
@@ -109,7 +108,7 @@ export const api = {
         email,
         name,
         role: role || 'Professional',
-        password: password || 'CareerLake@2026',
+        password,
       }),
     }),
   getMe: () => request<{ user: SanitizedUser }>('/api/auth/me'),

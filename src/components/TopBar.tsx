@@ -4,10 +4,8 @@ import { ChevronDown, Plus, RefreshCw } from 'lucide-react';
 
 interface TopBarProps {
   currentUser: User | null;
-  allUsers: User[];
   activeTab: string;
   onSelectTab: (tab: string) => void;
-  onSwitchUser: (userId: string) => void;
   onOpenNewUserModal: () => void;
   onLogout?: () => void;
   isSyncing?: boolean;
@@ -15,10 +13,8 @@ interface TopBarProps {
 
 export const TopBar: React.FC<TopBarProps> = ({
   currentUser,
-  allUsers,
   activeTab,
   onSelectTab,
-  onSwitchUser,
   onOpenNewUserModal,
   onLogout,
   isSyncing,
@@ -66,7 +62,7 @@ export const TopBar: React.FC<TopBarProps> = ({
           })}
         </nav>
 
-        {/* Zone 3: Actions & User Switcher */}
+        {/* Zone 3: Actions & account menu */}
         <div className="flex items-center gap-3">
           {isSyncing && (
             <div className="flex items-center gap-1.5 text-xs text-neutral-400">
@@ -75,12 +71,12 @@ export const TopBar: React.FC<TopBarProps> = ({
             </div>
           )}
 
-          {/* User Session Switcher (Demonstrating Multi-User PC Isolation) */}
+          {/* Account menu */}
           <div className="relative">
             <button
               onClick={() => setUserMenuOpen(!userMenuOpen)}
               className="flex items-center gap-2.5 px-2.5 py-1.5 rounded-md hover:bg-neutral-100 transition-colors border border-neutral-200 text-left"
-              title="Trocar usuário autenticado (Sessão isolada)"
+              title="Conta"
             >
               <div className="w-6 h-6 rounded bg-neutral-900 text-white flex items-center justify-center text-xs font-semibold">
                 {currentUser?.avatar || 'CL'}
@@ -103,48 +99,7 @@ export const TopBar: React.FC<TopBarProps> = ({
                   onClick={() => setUserMenuOpen(false)}
                 />
                 <div className="absolute right-0 mt-2 w-72 bg-white rounded-lg shadow-lg border border-neutral-200 py-2 z-40 text-xs text-neutral-700">
-                  <div className="px-3 py-2 border-b border-neutral-100">
-                    <p className="font-semibold text-neutral-900">Isolamento Multi-usuário</p>
-                    <p className="text-[11px] text-neutral-500 mt-0.5">
-                      Dois usuários no mesmo PC possuem Career Lakes, vagas e jobs 100% independentes.
-                    </p>
-                  </div>
-
-                  <div className="py-1">
-                    <p className="px-3 py-1 text-[10px] font-semibold text-neutral-400 uppercase tracking-wider">
-                      Contas Locais Disponíveis
-                    </p>
-                    {allUsers.map((u) => {
-                      const isCurrent = u.id === currentUser?.id;
-                      return (
-                        <button
-                          key={u.id}
-                          onClick={() => {
-                            onSwitchUser(u.id);
-                            setUserMenuOpen(false);
-                          }}
-                          className={`w-full text-left px-3 py-2 flex items-center justify-between hover:bg-neutral-50 transition-colors ${
-                            isCurrent ? 'bg-neutral-50 font-semibold text-neutral-900' : ''
-                          }`}
-                        >
-                          <div className="flex items-center gap-2 truncate">
-                            <span className="w-5 h-5 rounded bg-neutral-200 text-neutral-800 text-[10px] flex items-center justify-center font-bold">
-                              {u.avatar}
-                            </span>
-                            <div className="truncate">
-                              <p className="truncate text-xs">{u.name}</p>
-                              <p className="text-[10px] text-neutral-400 truncate">{u.currentRole}</p>
-                            </div>
-                          </div>
-                          {isCurrent && (
-                            <span className="text-[10px] text-neutral-900 font-medium">Ativo</span>
-                          )}
-                        </button>
-                      );
-                    })}
-                  </div>
-
-                  <div className="border-t border-neutral-100 pt-1 mt-1 space-y-0.5">
+                  <div className="space-y-0.5">
                     <button
                       onClick={() => {
                         setUserMenuOpen(false);

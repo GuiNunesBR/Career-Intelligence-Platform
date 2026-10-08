@@ -45,15 +45,6 @@ export const apiRouter = express.Router();
 
 import pdfParse from 'pdf-parse';
 
-apiRouter.get('/auth/users', async (_req, res) => {
-  try {
-    const users = await authService.getAllUsers();
-    res.json({ users });
-  } catch (err) {
-    res.status(500).json({ error: String(err) });
-  }
-});
-
 apiRouter.post('/auth/login', authRateLimiter, validateBody(LoginSchema), async (req, res) => {
   try {
     const result = await authService.login(req.body);

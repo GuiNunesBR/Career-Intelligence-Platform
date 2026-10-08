@@ -78,9 +78,11 @@ export class CareerLakeDatabase {
   }
 
   private initDatabase(): void {
-    const defaultPasswordHash = bcrypt.hashSync('CareerLake@2026', 10);
+    // Demo accounts share a known password: only seed them when explicitly requested outside production
+    if (process.env.NODE_ENV === 'production' || process.env.SEED_DEMO_USERS !== 'true') return;
+
+    const defaultPasswordHash = bcrypt.hashSync(process.env.DEMO_USER_PASSWORD || crypto.randomBytes(16).toString('hex'), 10);
     let users = readJsonFile<User[]>(this.usersFile, []);
-    let updated = false;
 
     if (users.length === 0) {
       // Seed default demo users
@@ -110,17 +112,6 @@ export class CareerLakeDatabase {
       writeJsonFile(this.usersFile, users);
       this.seedUserA(userA.id);
       this.seedUserB(userB.id);
-    } else {
-      for (const u of users) {
-        if (!u.passwordHash) {
-          u.passwordHash = defaultPasswordHash;
-          u.updatedAt = new Date().toISOString();
-          updated = true;
-        }
-      }
-      if (updated) {
-        writeJsonFile(this.usersFile, users);
-      }
     }
 
     // Seed automations if not present
@@ -577,6 +568,7 @@ export class CareerLakeDatabase {
   }
 
   public createUser(email: string, name: string, passwordHash?: string, currentRole: string = 'Professional'): User {
+    if (!passwordHash) throw new Error('passwordHash is required');
     const users = this.getUsers();
     const id = `usr_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
     const initials = name
@@ -593,7 +585,7 @@ export class CareerLakeDatabase {
       name,
       avatar: initials || 'CL',
       currentRole,
-      passwordHash: passwordHash || bcrypt.hashSync('CareerLake@2026', 10),
+      passwordHash,
       createdAt: now,
       updatedAt: now,
     };

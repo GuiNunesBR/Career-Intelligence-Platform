@@ -3,3 +3,15 @@ dist
 server.js
 .env
 .env.*
+
+# Local databases and user data (contain personal data and sessions)
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+data/
+uploads/
+
+# Logs and tool artifacts
+*.log
+.antigravity/

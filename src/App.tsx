@@ -12,7 +12,7 @@ import {
   ApplicationStatus,
   TailoringMode,
 } from './shared/types.js';
-import { api, getStoredUser, getStoredToken, setStoredSession } from './lib/api.js';
+import { api, getStoredToken, setStoredSession } from './lib/api.js';
 import { TopBar } from './components/TopBar.js';
 import { DashboardView } from './components/DashboardView.js';
 import { CareerLakeView } from './components/CareerLakeView.js';
@@ -25,7 +25,6 @@ import { NewUserModal } from './components/NewUserModal.js';
 import { CheckCircle2, AlertCircle } from 'lucide-react';
 
 export default function App() {
-  const [allUsers, setAllUsers] = useState<User[]>([]);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [activeTab, setActiveTab] = useState<string>('lake');
   const [isSyncing, setIsSyncing] = useState<boolean>(false);
@@ -80,34 +79,12 @@ export default function App() {
     }
   };
 
-  // Initial load: Fetch users & initialize session
+  // Initial load: restore session from stored token (no token → login form)
   useEffect(() => {
     async function init() {
       try {
-        const { users } = await api.getUsers();
-        setAllUsers(users);
-
-        const storedToken = getStoredToken();
-        if (storedToken) {
-          try {
-            const { user } = await api.getMe();
-            setCurrentUser(user);
-            await loadUserData(user.id);
-            return;
-          } catch {
-            // Token expired, log in explicitly
-          }
-        }
-
-        const storedUser = getStoredUser();
-        const active = storedUser ? users.find((u) => u.id === storedUser.id) || users[0] : users[0];
-
-        if (active) {
-          const { session, user } = await api.login({
-            email: active.email,
-            password: 'CareerLake@2026',
-          });
-          setStoredSession(session);
+        if (getStoredToken()) {
+          const { user } = await api.getMe();
           setCurrentUser(user);
           await loadUserData(user.id);
         }
@@ -187,29 +164,6 @@ export default function App() {
     }
   };
 
-  // Switch authenticated user (multi-user simulation on same PC)
-  const handleSwitchUser = async (userId: string) => {
-    const target = allUsers.find((u) => u.id === userId);
-    if (!target) return;
-    try {
-      const { session, user } = await api.login({
-        email: target.email,
-        password: 'CareerLake@2026',
-      });
-      setStoredSession(session);
-      setCurrentUser(user);
-      setSelectedJobId(null);
-      setCurrentAnalysis(null);
-      setCurrentCV(null);
-      setCoverLetter(null);
-      setActiveTab('lake');
-      await loadUserData(user.id);
-      showToast(`Sessão alterada para ${user.name} (${user.currentRole})`);
-    } catch (err: any) {
-      showToast(err.message || 'Erro ao trocar de usuário', 'error');
-    }
-  };
-
   const handleLogout = async () => {
     await api.logout();
     setCurrentUser(null);
@@ -221,12 +175,10 @@ export default function App() {
   };
 
   // Create new user account
-  const handleCreateUser = async (email: string, name: string, role: string, password?: string) => {
+  const handleCreateUser = async (email: string, name: string, role: string, password: string) => {
     const { session, user } = await api.register(email, name, role, password);
     setStoredSession(session);
     setCurrentUser(user);
-    const { users } = await api.getUsers();
-    setAllUsers(users);
     setSelectedJobId(null);
     setCurrentAnalysis(null);
     setCurrentCV(null);
@@ -497,10 +449,8 @@ export default function App() {
       {/* Top Bar Navigation */}
       <TopBar
         currentUser={currentUser}
-        allUsers={allUsers}
         activeTab={activeTab}
         onSelectTab={setActiveTab}
-        onSwitchUser={handleSwitchUser}
         onOpenNewUserModal={() => setIsNewUserModalOpen(true)}
         onLogout={handleLogout}
         isSyncing={isSyncing}
@@ -533,7 +483,7 @@ export default function App() {
                   required
                   value={loginEmail}
                   onChange={(e) => setLoginEmail(e.target.value)}
-                  placeholder="alex.costa@industrial-ops.com"
+                  placeholder="voce@email.com"
                   className="w-full p-2.5 text-xs border border-neutral-300 rounded focus:ring-1 focus:ring-neutral-900 outline-none"
                 />
               </div>
@@ -562,29 +512,7 @@ export default function App() {
             </form>
 
             <div className="mt-6 pt-5 border-t border-neutral-100">
-              <p className="text-[11px] font-semibold text-neutral-500 uppercase tracking-wider mb-2">
-                Acesso Rápido — Contas Seeded
-              </p>
-              <div className="space-y-1.5">
-                {allUsers.map((u) => (
-                  <button
-                    key={u.id}
-                    onClick={() => {
-                      setLoginEmail(u.email);
-                      setLoginPassword('CareerLake@2026');
-                    }}
-                    className="w-full text-left p-2 rounded border border-neutral-200 hover:bg-neutral-50 text-xs flex items-center justify-between transition-colors"
-                  >
-                    <div>
-                      <p className="font-semibold text-neutral-900">{u.name}</p>
-                      <p className="text-[10px] text-neutral-500">{u.email}</p>
-                    </div>
-                    <span className="text-[10px] text-neutral-500 font-mono">Preencher</span>
-                  </button>
-                ))}
-              </div>
-
-              <div className="mt-4 text-center">
+              <div className="text-center">
                 <button
                   onClick={() => setIsNewUserModalOpen(true)}
                   className="text-xs text-neutral-700 hover:text-neutral-900 underline font-medium"
