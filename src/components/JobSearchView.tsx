@@ -2,6 +2,18 @@ import React, { useState, useEffect } from 'react';
 import { BackgroundJob, Job, FitAnalysis } from '../shared/types.js';
 import { Search, Briefcase, MapPin, Building, Calendar, Star, FileText, Globe, ExternalLink } from 'lucide-react';
 import { api } from '../lib/api.js';
+import { fitBand, headlineScore } from '../shared/fitScore.js';
+
+const IMPORTANCE_RANK = { critical: 0, high: 1, medium: 2, nice_to_have: 3 } as const;
+
+/** Main reason a job matched and its main gap, taken from the evidence matrix. */
+function matchHighlights(fit: FitAnalysis) {
+  const byImportance = [...fit.evidenceMatrix].sort((a, b) => IMPORTANCE_RANK[a.importance] - IMPORTANCE_RANK[b.importance]);
+  return {
+    reason: byImportance.find((i) => i.evidenceType === 'direct') || byImportance.find((i) => i.evidenceType === 'derived'),
+    gap: byImportance.find((i) => i.evidenceType === 'gap'),
+  };
+}
 
 interface JobSearchViewProps {
   jobs: BackgroundJob[];
@@ -22,14 +34,14 @@ export const JobSearchView: React.FC<JobSearchViewProps> = ({
 }) => {
   const [agents, setAgents] = useState<any[]>([]);
   const [isCreatingAgent, setIsCreatingAgent] = useState(false);
-  
+
   const [newAgentName, setNewAgentName] = useState('');
   const [roles, setRoles] = useState('');
   const [seniorities, setSeniorities] = useState<string[]>([]);
   const [location, setLocation] = useState('');
   const [modes, setModes] = useState<string[]>([]);
   const [frequency, setFrequency] = useState('manual');
-  
+
   const [isTriggering, setIsTriggering] = useState(false);
 
   // Load actual jobs and their fit analyses from the DB
@@ -47,7 +59,7 @@ export const JobSearchView: React.FC<JobSearchViewProps> = ({
     if (!isSearchRunning) {
       fetchJobsAndFits();
     }
-  }, [isSearchRunning]); 
+  }, [isSearchRunning]);
 
   const fetchAgents = async () => {
     try {
@@ -72,9 +84,9 @@ export const JobSearchView: React.FC<JobSearchViewProps> = ({
           }
         })
       );
-      
+
       // Sort by functional fit score; jobs without an analysis go last
-      jobsWithFit.sort((a, b) => (b.fit?.dimensions.functionalFit ?? -1) - (a.fit?.dimensions.functionalFit ?? -1));
+      jobsWithFit.sort((a, b) => (headlineScore(b.fit) ?? -1) - (headlineScore(a.fit) ?? -1));
       setFoundJobs(jobsWithFit);
     } catch (err) {
       console.error(err);
@@ -124,31 +136,31 @@ export const JobSearchView: React.FC<JobSearchViewProps> = ({
     <div className="flex flex-col md:flex-row gap-6">
       {/* Sidebar - Search Parameters */}
       <div className="w-full md:w-1/3 xl:w-1/4 space-y-4">
-        
+
         {/* Active Agents */}
         <div className="bg-white border border-neutral-200 rounded-lg p-5">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-sm font-bold text-neutral-900 flex items-center gap-2">
               <Search className="w-4 h-4" /> Meus Agentes de Busca
             </h2>
-            <button 
+            <button
               onClick={() => setIsCreatingAgent(true)}
               className="text-xs font-semibold bg-neutral-100 text-neutral-900 px-2 py-1 rounded hover:bg-neutral-200"
             >
               + Novo
             </button>
           </div>
-          
+
           <div className="space-y-3">
             {agents.length === 0 && !isCreatingAgent && (
               <p className="text-xs text-neutral-500 text-center py-4">Nenhum agente configurado.</p>
             )}
-            
+
             {agents.map(agent => (
               <div key={agent.id} className="border border-neutral-200 rounded p-3 relative group">
                 <div className="flex justify-between items-start mb-1">
                   <h3 className="text-sm font-bold text-neutral-900">{agent.name}</h3>
-                  <button 
+                  <button
                     onClick={() => handleDeleteAgent(agent.id)}
                     className="text-neutral-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
                   >
@@ -161,7 +173,7 @@ export const JobSearchView: React.FC<JobSearchViewProps> = ({
                   {(agent.location || agent.mode) && (
                     <p><span className="font-semibold">Local:</span> {[agent.mode, agent.location].filter(Boolean).join(' - ')}</p>
                   )}
-                  <button 
+                  <button
                     onClick={() => {
                       onTriggerJob('job_search_agent', {
                         roles: agent.roles.join(', '),
@@ -188,9 +200,9 @@ export const JobSearchView: React.FC<JobSearchViewProps> = ({
             <div className="space-y-4 text-xs font-medium text-neutral-700">
               <div>
                 <label className="block mb-1">Nome do Agente</label>
-                <input 
-                  type="text" 
-                  placeholder="Ex: Vagas Backend Pleno" 
+                <input
+                  type="text"
+                  placeholder="Ex: Vagas Backend Pleno"
                   className="w-full border border-neutral-300 rounded p-2 focus:ring-1 focus:ring-neutral-900 bg-white"
                   value={newAgentName}
                   onChange={e => setNewAgentName(e.target.value)}
@@ -198,15 +210,15 @@ export const JobSearchView: React.FC<JobSearchViewProps> = ({
               </div>
               <div>
                 <label className="block mb-1">Cargos (separados por vírgula)</label>
-                <input 
-                  type="text" 
-                  placeholder="Ex: Analista de Marketing, Growth" 
+                <input
+                  type="text"
+                  placeholder="Ex: Analista de Marketing, Growth"
                   className="w-full border border-neutral-300 rounded p-2 focus:ring-1 focus:ring-neutral-900 bg-white"
                   value={roles}
                   onChange={e => setRoles(e.target.value)}
                 />
               </div>
-              
+
               <div>
                 <label className="block mb-1">Senioridade</label>
                 <div className="flex flex-wrap gap-2">
@@ -224,9 +236,9 @@ export const JobSearchView: React.FC<JobSearchViewProps> = ({
 
               <div>
                 <label className="block mb-1">Localização (opcional, até 3 estados separados por vírgula)</label>
-                <input 
-                  type="text" 
-                  placeholder="Ex: SP, RJ, MG" 
+                <input
+                  type="text"
+                  placeholder="Ex: SP, RJ, MG"
                   className="w-full border border-neutral-300 rounded p-2 focus:ring-1 focus:ring-neutral-900 bg-white"
                   value={location}
                   onChange={e => setLocation(e.target.value)}
@@ -248,7 +260,7 @@ export const JobSearchView: React.FC<JobSearchViewProps> = ({
               </div>
               <div>
                 <label className="block mb-1">Frequência de Busca</label>
-                <select 
+                <select
                   className="w-full border border-neutral-300 rounded p-2 bg-white focus:ring-1 focus:ring-neutral-900"
                   value={frequency}
                   onChange={e => setFrequency(e.target.value)}
@@ -259,15 +271,15 @@ export const JobSearchView: React.FC<JobSearchViewProps> = ({
                   <option value="daily">Diariamente</option>
                 </select>
               </div>
-              
+
               <div className="flex gap-2 pt-2">
-                <button 
+                <button
                   onClick={() => setIsCreatingAgent(false)}
                   className="flex-1 py-2 bg-white border border-neutral-300 text-neutral-700 rounded font-semibold hover:bg-neutral-50 transition-colors"
                 >
                   Cancelar
                 </button>
-                <button 
+                <button
                   onClick={handleCreateAgent}
                   disabled={isTriggering || isSearchRunning || !roles || !newAgentName || seniorities.length === 0}
                   className="flex-1 py-2 bg-neutral-900 text-white rounded font-semibold hover:bg-neutral-800 disabled:opacity-50 transition-colors"
@@ -278,7 +290,7 @@ export const JobSearchView: React.FC<JobSearchViewProps> = ({
             </div>
           </div>
         )}
-        
+
         {isSearchRunning && (
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
             <p className="text-xs text-blue-800 text-center animate-pulse font-medium">
@@ -304,17 +316,23 @@ export const JobSearchView: React.FC<JobSearchViewProps> = ({
             ) : foundJobs.length === 0 ? (
               <div className="py-10 text-center text-sm text-neutral-500">Nenhuma vaga encontrada ainda. Configure os filtros e inicie a busca!</div>
             ) : (
-              foundJobs.map(({ job, fit }) => (
+              foundJobs.map(({ job, fit }) => {
+                const score = headlineScore(fit);
+                const highlights = fit ? matchHighlights(fit) : null;
+                return (
                 <div key={job.id} className="border border-neutral-200 rounded-lg p-4 hover:border-neutral-300 transition-colors flex flex-col md:flex-row gap-4">
                   {/* Score */}
                   <div className="flex-shrink-0 flex flex-col items-center justify-center gap-1">
-                    {fit ? (
-                      <div className={`w-14 h-14 rounded-full border-4 flex items-center justify-center font-bold text-lg
-                        ${fit.dimensions.functionalFit >= 80 ? 'border-emerald-500 text-emerald-700 bg-emerald-50' :
-                          fit.dimensions.functionalFit >= 50 ? 'border-amber-500 text-amber-700 bg-amber-50' :
-                          'border-rose-500 text-rose-700 bg-rose-50'}`}>
-                        {fit.dimensions.functionalFit}
-                      </div>
+                    {score !== null ? (
+                      <>
+                        <div className={`w-14 h-14 rounded-full border-4 flex items-center justify-center font-bold text-lg
+                          ${score >= 75 ? 'border-emerald-500 text-emerald-700 bg-emerald-50' :
+                            score >= 40 ? 'border-amber-500 text-amber-700 bg-amber-50' :
+                            'border-rose-500 text-rose-700 bg-rose-50'}`}>
+                          {score}
+                        </div>
+                        <span className="text-[10px] text-neutral-500 font-medium">{fitBand(score)}</span>
+                      </>
                     ) : (
                       <>
                         <div className="w-14 h-14 rounded-full border-4 border-neutral-200 text-neutral-400 bg-neutral-50 flex items-center justify-center font-bold text-lg">
@@ -334,15 +352,13 @@ export const JobSearchView: React.FC<JobSearchViewProps> = ({
                       <span className="flex items-center gap-1 text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded"><Globe className="w-3 h-3" /> {job.employmentType}</span>
                     </div>
 
-                    {fit && (
-                      <div className="mt-3 flex flex-wrap gap-1.5">
-                        {fit.strongMatches.slice(0, 5).map(kw => (
-                          <span key={kw.slice(0, 20)} className="px-2 py-0.5 bg-neutral-100 text-neutral-600 rounded text-[10px] font-medium border border-neutral-200">
-                            {kw.split(':')[0].slice(0, 30)}...
-                          </span>
-                        ))}
-                        {fit.strongMatches.length > 5 && (
-                          <span className="px-2 py-0.5 text-neutral-400 text-[10px] font-medium">+{fit.strongMatches.length - 5}</span>
+                    {highlights && (highlights.reason || highlights.gap) && (
+                      <div className="mt-3 space-y-1 text-[11px] leading-snug">
+                        {highlights.reason && (
+                          <p className="text-emerald-700"><span className="font-bold">✓</span> {highlights.reason.requirementDescription}</p>
+                        )}
+                        {highlights.gap && (
+                          <p className="text-rose-700"><span className="font-bold">✕</span> {highlights.gap.requirementDescription}</p>
                         )}
                       </div>
                     )}
@@ -350,36 +366,37 @@ export const JobSearchView: React.FC<JobSearchViewProps> = ({
 
                   {/* Actions */}
                   <div className="flex-shrink-0 flex flex-col items-end justify-center gap-2">
-                    <button 
+                    <button
                       onClick={() => onNavigate('fit_analysis', job.id)}
                       className="w-full text-center px-4 py-1.5 bg-blue-600 text-white rounded text-xs font-semibold hover:bg-blue-700 transition-colors flex items-center justify-center gap-1.5"
                     >
                       <Briefcase className="w-3.5 h-3.5" /> Analisar Fit
                     </button>
-                    <button 
+                    <button
                       onClick={() => onNavigate('tailoring', job.id)}
                       className="w-full text-center px-4 py-1.5 bg-neutral-900 text-white rounded text-xs font-semibold hover:bg-neutral-800 transition-colors flex items-center justify-center gap-1.5"
                     >
                       <FileText className="w-3.5 h-3.5" /> Gerar CV
                     </button>
                     {job.url && (
-                      <a 
-                        href={job.url} 
-                        target="_blank" 
+                      <a
+                        href={job.url}
+                        target="_blank"
                         rel="noreferrer"
                         className="w-full text-center px-4 py-1.5 border border-neutral-300 text-neutral-700 rounded text-xs font-semibold hover:bg-neutral-50 transition-colors flex items-center justify-center gap-1.5"
                       >
                         <ExternalLink className="w-3.5 h-3.5" /> Ver Vaga
                       </a>
                     )}
-                    {fit && fit.dimensions.functionalFit >= 80 && (
+                    {score !== null && score >= 75 && (
                       <span className="text-[10px] text-emerald-600 font-semibold flex items-center gap-1">
                         <Star className="w-3 h-3 fill-emerald-600" /> Top Match
                       </span>
                     )}
                   </div>
                 </div>
-              ))
+              );
+              })
             )}
           </div>
         </div>

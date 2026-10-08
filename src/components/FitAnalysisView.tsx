@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Job, FitAnalysis, EvidenceType } from '../shared/types.js';
+import { Job, FitAnalysis, EvidenceType, FitDimensions } from '../shared/types.js';
+import { fitBand, headlineScore } from '../shared/fitScore.js';
 import {
   CheckCircle2,
   AlertTriangle,
@@ -8,6 +9,18 @@ import {
   BookmarkPlus,
   RefreshCw,
 } from 'lucide-react';
+
+const DIMENSION_LABELS: Array<[keyof FitDimensions, string]> = [
+  ['functionalFit', 'Funcional'],
+  ['technicalFit', 'Técnico / Ferramentas'],
+  ['domainFit', 'Domínio / Setor'],
+  ['seniorityScopeFit', 'Senioridade'],
+  ['leadershipFit', 'Liderança'],
+  ['stakeholderFit', 'Stakeholders'],
+  ['languageFit', 'Idiomas'],
+  ['evidenceStrength', 'Força da evidência'],
+  ['transferability', 'Transferibilidade'],
+];
 
 interface FitAnalysisViewProps {
   job: Job;
@@ -65,6 +78,7 @@ export const FitAnalysisView: React.FC<FitAnalysisViewProps> = ({
   };
 
   const dims = analysis.dimensions;
+  const overall = headlineScore(analysis);
 
   return (
     <div className="space-y-6">
@@ -116,14 +130,45 @@ export const FitAnalysisView: React.FC<FitAnalysisViewProps> = ({
         </div>
 
         {/* Executive Summary */}
-        <div className="pt-4">
-          <h2 className="text-xs font-semibold text-neutral-700 uppercase tracking-wider mb-1.5">
-            Diagnóstico Executivo de Aderência
-          </h2>
-          <p className="text-xs text-neutral-700 leading-relaxed max-w-4xl">
-            {analysis.overallSummary}
-          </p>
+        <div className="pt-4 flex flex-col md:flex-row gap-6">
+          {overall !== null && (
+            <div className="shrink-0 text-center">
+              <div className="text-3xl font-bold text-neutral-900">{overall}</div>
+              <div className="text-[11px] font-semibold text-neutral-500 uppercase tracking-wider">Fit {fitBand(overall)}</div>
+            </div>
+          )}
+          <div>
+            <h2 className="text-xs font-semibold text-neutral-700 uppercase tracking-wider mb-1.5">
+              Diagnóstico Executivo de Aderência
+            </h2>
+            <p className="text-xs text-neutral-700 leading-relaxed max-w-4xl whitespace-pre-line">
+              {analysis.overallSummary}
+            </p>
+          </div>
         </div>
+
+        {/* Per-dimension scores, computed from the matrix below */}
+        <div className="mt-4 pt-4 border-t border-neutral-100 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-x-6 gap-y-3">
+          {DIMENSION_LABELS.map(([key, label]) => {
+            const value = dims[key];
+            return (
+              <div key={key}>
+                <div className="flex justify-between text-[11px] text-neutral-600 mb-1">
+                  <span>{label}</span>
+                  <span className="font-mono font-semibold">{value === null || value === undefined ? 'n/a' : `${value}%`}</span>
+                </div>
+                <div className="h-1.5 bg-neutral-100 rounded">
+                  {value !== null && value !== undefined && (
+                    <div className="h-1.5 bg-neutral-800 rounded" style={{ width: `${value}%` }} />
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+        <p className="mt-2 text-[10px] text-neutral-400">
+          n/a = a vaga não tem requisitos nessa dimensão. Scores calculados a partir da classificação de cada requisito.
+        </p>
       </div>
 
 

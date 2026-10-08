@@ -7,6 +7,8 @@ import {
 } from './container.js';
 import { jobScraperService } from './services/job-scraper.service.js';
 import { AIError } from './ai-provider.js';
+import { headlineScore } from '../src/shared/fitScore.js';
+import { buildResumeImport } from './services/resume-import.service.js';
 import { BackgroundJob } from '../src/shared/types.js';
 
 const MAX_RETRIES = 3;
@@ -149,43 +151,14 @@ export class BackgroundWorker {
         job.logs.push(`[${new Date().toISOString()}] CV successfully parsed by AI. Inserting into Career Lake...`);
         await jobQueueRepository.saveBackgroundJob(userId, job);
 
-        if (parsedData.profile) {
-          await careerLakeRepository.updateProfile(userId, parsedData.profile);
-        }
-
-        // Entries without the identifying fields are skipped rather than filled with placeholders
-        const experiences = parsedData.experiences.filter((exp) => exp.title.trim() && exp.company.trim());
-        for (const exp of experiences) {
-          await careerLakeRepository.addExperience(userId, {
-            title: exp.title,
-            company: exp.company,
-            domain: exp.domain,
-            startDate: exp.startDate,
-            endDate: exp.endDate || undefined,
-            isCurrent: exp.isCurrent,
-            location: exp.location,
-            employmentType: exp.employmentType as any,
-            description: exp.description,
-          });
-        }
-        for (const skill of parsedData.skills) {
-          await careerLakeRepository.addSkill(userId, {
-            name: skill.name,
-            category: skill.category as any,
-            proficiency: skill.proficiency as any,
-            yearsExperience: skill.yearsExperience,
-          });
-        }
+        // Grounding checks (excerpts/metrics vs. resume text), then merge into the Lake
+        const { payload, report } = buildResumeImport(parsedData, rawText, job.payload?.extractionWarnings || []);
+        const merge = await careerLakeRepository.importResume(userId, payload);
 
         job.status = 'completed';
         job.progress = 100;
         job.finishedAt = new Date().toISOString();
-        job.result = {
-          parsed: true,
-          experiencesCount: experiences.length,
-          experiencesSkipped: parsedData.experiences.length - experiences.length,
-          skillsCount: parsedData.skills.length,
-        };
+        job.result = { parsed: true, ...report, merge };
         job.logs.push(`[${new Date().toISOString()}] CV successfully parsed and inserted into Career Lake.`);
         await jobQueueRepository.saveBackgroundJob(userId, job);
 
@@ -302,7 +275,7 @@ export class BackgroundWorker {
         // Save the top 10 analyzed jobs, plus every job that could not be analyzed (so none silently disappear)
         const analyzed = evaluatedJobs
           .filter((item) => item.analysis)
-          .sort((a, b) => b.analysis.dimensions.functionalFit - a.analysis.dimensions.functionalFit);
+          .sort((a, b) => (headlineScore(b.analysis) ?? -1) - (headlineScore(a.analysis) ?? -1));
         const notAnalyzed = evaluatedJobs.filter((item) => !item.analysis);
         const toSave = [...analyzed.slice(0, 10), ...notAnalyzed];
 

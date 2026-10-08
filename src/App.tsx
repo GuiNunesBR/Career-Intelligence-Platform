@@ -26,6 +26,8 @@ import { CheckCircle2, AlertCircle } from 'lucide-react';
 
 export default function App() {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
+  // Result of the last CV import (counts, warnings), shown on the Career Lake for review
+  const [importReport, setImportReport] = useState<any | null>(null);
   const [activeTab, setActiveTab] = useState<string>('lake');
   const [isSyncing, setIsSyncing] = useState<boolean>(false);
 
@@ -107,7 +109,7 @@ export default function App() {
         const { backgroundJobs: updatedBgJobs } = await api.getBackgroundJobs();
         setBackgroundJobs((prev) => {
           const newJobs = updatedBgJobs || [];
-          const changed = newJobs.length !== prev.length || 
+          const changed = newJobs.length !== prev.length ||
             newJobs.some((j, i) => prev[i] && j.status !== prev[i].status);
           return changed ? newJobs : prev;
         });
@@ -221,11 +223,22 @@ export default function App() {
     showToast('Evidência auditada registrada com sucesso!');
   };
 
+  const handleDeleteLakeRecord = async (entity: 'experience' | 'project' | 'skill' | 'evidence', id: string) => {
+    try {
+      await api.deleteLakeRecord(entity, id);
+      const { lake: refreshed } = await api.getLake();
+      setLake(refreshed);
+      showToast('Registro removido do Career Lake.');
+    } catch (err: any) {
+      showToast(err.message || 'Não foi possível remover o registro.', 'error');
+    }
+  };
+
   const handleUploadCV = async (file: File) => {
     try {
       const formData = new FormData();
       formData.append('file', file);
-      
+
       const response = await fetch('/api/lake/upload-cv', {
         method: 'POST',
         headers: {
@@ -233,15 +246,18 @@ export default function App() {
         },
         body: formData,
       });
-      
-      if (!response.ok) throw new Error('Upload failed');
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error?.message || errorData.message || 'Falha no envio do currículo.');
+      }
       const data = await response.json();
       console.log('Upload initiated:', data);
-      
+
       const jobId = data.jobId;
       if (jobId) {
         showToast('Processando CV em background... Isso pode levar alguns segundos.', 'info');
-        
+
         // Parsing may retry the model several times; poll for up to ~5 minutes
         let completed = false;
         for (let attempts = 0; attempts < 150 && !completed; attempts++) {
@@ -250,6 +266,7 @@ export default function App() {
           const job = jobsRes.backgroundJobs.find((j) => j.id === jobId);
           if (job?.status === 'completed') {
             completed = true;
+            setImportReport(job.result || null);
           } else if (job?.status === 'failed' || job?.status === 'cancelled') {
             const lastError = [...(job.logs || [])].reverse().find((l) => l.includes('ERROR:'));
             throw new Error(lastError ? lastError.split('ERROR:')[1].trim() : 'Falha no processamento do currículo.');
@@ -578,6 +595,9 @@ export default function App() {
                 onAddEvidence={handleAddEvidence}
                 onRunAudit={handleRunAudit}
                 onUploadCV={handleUploadCV}
+                onDeleteRecord={handleDeleteLakeRecord}
+                importReport={importReport}
+                onDismissImportReport={() => setImportReport(null)}
               />
             )}
 

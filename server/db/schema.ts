@@ -41,6 +41,8 @@ export const careerProfiles = sqliteTable('career_profiles', {
   targetIndustries: text('target_industries', { mode: 'json' }).notNull().$type<string[]>(),
   languages: text('languages', { mode: 'json' }).notNull().$type<any[]>(),
   education: text('education', { mode: 'json' }).notNull().$type<any[]>(),
+  contact: text('contact', { mode: 'json' }).$type<Record<string, unknown>>(),
+  certifications: text('certifications', { mode: 'json' }).$type<any[]>(),
   createdAt: text().default(sql`CURRENT_TIMESTAMP`).notNull(),
   updatedAt: text().default(sql`CURRENT_TIMESTAMP`).notNull()
 }, (table) => {
@@ -61,6 +63,7 @@ export const experiences = sqliteTable('experiences', {
   domain: text('domain').notNull(),
   location: text('location').notNull(),
   description: text('description').notNull(),
+  origin: text('origin'),
   createdAt: text().default(sql`CURRENT_TIMESTAMP`).notNull(),
   updatedAt: text().default(sql`CURRENT_TIMESTAMP`).notNull()
 }, (table) => {
@@ -79,6 +82,7 @@ export const projects = sqliteTable('projects', {
   scope: text('scope').notNull(),
   technologies: text('technologies', { mode: 'json' }).notNull().$type<string[]>(),
   metrics: text('metrics'),
+  origin: text('origin'),
   createdAt: text().default(sql`CURRENT_TIMESTAMP`).notNull(),
   updatedAt: text().default(sql`CURRENT_TIMESTAMP`).notNull()
 }, (table) => {
@@ -100,7 +104,8 @@ export const skills = sqliteTable('skills', {
   name: text('name').notNull(),
   category: text('category').notNull(),
   proficiency: text('proficiency').notNull(),
-  yearsExperience: integer('years_experience').notNull()
+  yearsExperience: integer('years_experience').notNull(),
+  origin: text('origin')
 });
 
 export const evidences = sqliteTable('evidences', {
@@ -114,6 +119,7 @@ export const evidences = sqliteTable('evidences', {
   source: text('source').notNull(),
   confidence: text('confidence').notNull(),
   domainTag: text('domain_tag'),
+  tools: text('tools', { mode: 'json' }).$type<string[]>(),
   createdAt: text().default(sql`CURRENT_TIMESTAMP`).notNull()
 }, (table) => {
   return {

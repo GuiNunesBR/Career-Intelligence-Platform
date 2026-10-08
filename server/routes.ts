@@ -43,7 +43,7 @@ export const apiRouter = express.Router();
 // 1. AUTHENTICATION (Zero fallback, Real tokens)
 // ==========================================
 
-import pdfParse from 'pdf-parse';
+import { extractResumeText } from './services/pdf-extract.service.js';
 
 apiRouter.post('/auth/login', authRateLimiter, validateBody(LoginSchema), async (req, res) => {
   try {
@@ -94,30 +94,39 @@ apiRouter.post('/auth/logout', authMiddleware, async (req: AuthenticatedRequest,
 // 2. CAREER LAKE (Ground Truth / Source of Truth)
 // ==========================================
 
-const upload = multer({ storage: multer.memoryStorage() });
+const MAX_CV_BYTES = 5 * 1024 * 1024;
+const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: MAX_CV_BYTES, files: 1 } });
 
-apiRouter.post('/lake/upload-cv', authMiddleware, upload.single('file'), async (req: AuthenticatedRequest, res, next) => {
+const uploadSingleCV = (req: AuthenticatedRequest, res: Response, next: NextFunction) =>
+  upload.single('file')(req, res, (err: any) => {
+    if (err?.code === 'LIMIT_FILE_SIZE') {
+      return res.status(413).json({ error: { code: 'FILE_TOO_LARGE', message: 'O arquivo excede o limite de 5 MB.' } });
+    }
+    next(err);
+  });
+
+apiRouter.post('/lake/upload-cv', authMiddleware, uploadSingleCV, async (req: AuthenticatedRequest, res, next) => {
   try {
     if (!req.file) {
-      return res.status(400).json({ error: 'No file uploaded' });
+      return res.status(400).json({ error: { code: 'NO_FILE', message: 'Nenhum arquivo enviado.' } });
     }
-    
-    // Extract text from PDF
-    const data = await pdfParse(req.file.buffer);
-    const rawText = data.text;
-    
+
+    // Layout-aware extraction; rejects non-PDFs and image-only (scanned) PDFs with a clear message
+    const extraction = await extractResumeText(req.file.buffer);
+
     const job = await queueService.enqueueJob(
       req.user!.id,
       'document_parse',
-      { rawText, fileName: req.file.originalname },
+      { rawText: extraction.text, fileName: req.file.originalname, extractionWarnings: extraction.warnings },
       undefined,
       `cv_upload_${Date.now()}`
     );
 
-    res.status(202).json({ 
-      success: true, 
+    res.status(202).json({
+      success: true,
       message: 'CV uploaded successfully. Processing in background.',
-      jobId: job.id
+      jobId: job.id,
+      warnings: extraction.warnings,
     });
   } catch (err) {
     next(err);
@@ -203,6 +212,24 @@ apiRouter.post(
     }
   }
 );
+
+// Deleting Lake records lets the user correct what an import got wrong
+const LAKE_ENTITIES = ['experience', 'project', 'skill', 'evidence'] as const;
+apiRouter.delete('/lake/:entity/:id', authMiddleware, async (req: AuthenticatedRequest, res, next) => {
+  try {
+    const entity = req.params.entity as (typeof LAKE_ENTITIES)[number];
+    if (!LAKE_ENTITIES.includes(entity)) {
+      return res.status(404).json({ error: { code: 'NOT_FOUND', message: 'Unknown Lake entity' } });
+    }
+    const deleted = await careerLakeService.deleteRecord(req.user!.id, entity, req.params.id);
+    if (!deleted) {
+      return res.status(404).json({ error: { code: 'NOT_FOUND', message: 'Registro não encontrado.' } });
+    }
+    res.json({ success: true });
+  } catch (err) {
+    next(err);
+  }
+});
 
 // ==========================================
 // 3. JOBS & PARSING

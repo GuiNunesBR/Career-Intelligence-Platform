@@ -56,6 +56,11 @@ export class CareerLakeRepository implements ICareerLakeRepository {
     const lake = await this.getUserLake(userId);
     return lake.projects.find((p) => p.id === id) || null;
   }
-}
 
-export const careerLakeRepository = new CareerLakeRepository();
+  // Legacy JSON store: deletion and CV import are only supported by the SQLite repository
+  async deleteExperience(): Promise<boolean> { throw new Error('Not supported by the legacy JSON repository'); }
+  async deleteProject(): Promise<boolean> { throw new Error('Not supported by the legacy JSON repository'); }
+  async deleteSkill(): Promise<boolean> { throw new Error('Not supported by the legacy JSON repository'); }
+  async deleteEvidence(): Promise<boolean> { throw new Error('Not supported by the legacy JSON repository'); }
+  async importResume(): Promise<any> { throw new Error('Not supported by the legacy JSON repository'); }
+}

@@ -1,3 +1,4 @@
+import type { ResumeImportPayload } from '../services/resume-import.service.js';
 import {
   User,
   SanitizedUser,
@@ -28,6 +29,14 @@ export interface IUserRepository {
   deleteSession(token: string): Promise<void>;
 }
 
+export interface ResumeImportResult {
+  created: number;
+  updated: number;
+  removed: number;
+  /** CV records missing from the new CV but kept because the user attached evidence to them. */
+  keptWithManualEvidence: string[];
+}
+
 export interface ICareerLakeRepository {
   getUserLake(userId: string): Promise<UserCareerLake>;
   saveUserLake(userId: string, lake: UserCareerLake): Promise<void>;
@@ -38,6 +47,11 @@ export interface ICareerLakeRepository {
   addEvidence(userId: string, evidence: Omit<Evidence, 'id' | 'userId' | 'createdAt'>): Promise<Evidence>;
   getExperienceById(userId: string, id: string): Promise<Experience | null>;
   getProjectById(userId: string, id: string): Promise<Project | null>;
+  deleteExperience(userId: string, id: string): Promise<boolean>;
+  deleteProject(userId: string, id: string): Promise<boolean>;
+  deleteSkill(userId: string, id: string): Promise<boolean>;
+  deleteEvidence(userId: string, id: string): Promise<boolean>;
+  importResume(userId: string, payload: ResumeImportPayload): Promise<ResumeImportResult>;
 }
 
 export interface IJobRepository {

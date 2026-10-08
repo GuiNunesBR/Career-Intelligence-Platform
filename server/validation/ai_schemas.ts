@@ -49,16 +49,19 @@ export const EvidenceMatrixItemAIOutputSchema = z.object({
   sourceReferences: z.array(EvidenceSourceReferenceSchema),
 });
 
+const Percent = z.number().min(0).max(100).nullable();
+
 export const FitDimensionsAIOutputSchema = z.object({
-  functionalFit: z.number().min(0).max(100),
-  domainFit: z.number().min(0).max(100),
-  technicalFit: z.number().min(0).max(100),
-  seniorityScopeFit: z.number().min(0).max(100),
-  leadershipFit: z.number().min(0).max(100),
-  stakeholderFit: z.number().min(0).max(100),
-  languageFit: z.number().min(0).max(100),
-  evidenceStrength: z.number().min(0).max(100),
-  transferability: z.number().min(0).max(100),
+  overallFit: Percent.optional(),
+  functionalFit: Percent,
+  domainFit: Percent,
+  technicalFit: Percent,
+  seniorityScopeFit: Percent,
+  leadershipFit: Percent,
+  stakeholderFit: Percent,
+  languageFit: Percent,
+  evidenceStrength: Percent,
+  transferability: Percent,
 });
 
 export const FitAnalysisAIOutputSchema = z.object({

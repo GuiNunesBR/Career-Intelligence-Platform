@@ -30,16 +30,17 @@ export const CareerProfileUpdateSchema = z.object({
   })).optional(),
 });
 
+// Unknown fields stay empty: the Lake must never be filled with placeholder values
 export const ExperienceCreateSchema = z.object({
   company: z.string().min(1, 'Company is required'),
   title: z.string().min(1, 'Title is required'),
-  startDate: z.string().min(1, 'Start date is required'),
+  startDate: z.string().default(''),
   endDate: z.string().optional(),
   isCurrent: z.boolean().optional(),
-  employmentType: z.string().optional(),
-  domain: z.string().optional(),
-  location: z.string().optional(),
-  description: z.string().min(1, 'Description is required'),
+  employmentType: z.enum(['full-time', 'part-time', 'contract', 'freelance']).default('full-time'),
+  domain: z.string().default(''),
+  location: z.string().default(''),
+  description: z.string().default(''),
 });
 
 export const ProjectCreateSchema = z.object({
@@ -54,9 +55,9 @@ export const ProjectCreateSchema = z.object({
 
 export const SkillCreateSchema = z.object({
   name: z.string().min(1, 'Skill name is required'),
-  category: z.enum(['Functional', 'Domain', 'Technical', 'Leadership', 'Stakeholder', 'Language', 'Tool', 'Other']),
-  proficiency: z.enum(['Beginner', 'Intermediate', 'Advanced', 'Expert']),
-  yearsExperience: z.number().nonnegative().optional(),
+  category: z.enum(['Functional', 'Domain', 'Technical', 'Leadership', 'Tool', 'Soft', 'Language']),
+  proficiency: z.enum(['Fundamental', 'Competent', 'Advanced', 'Expert']),
+  yearsExperience: z.number().nonnegative().default(0),
 });
 
 export const EvidenceCreateSchema = z.object({
@@ -64,10 +65,12 @@ export const EvidenceCreateSchema = z.object({
   projectId: z.string().optional(),
   type: z.enum(['direct', 'derived', 'transferable']),
   statement: z.string().min(5, 'Statement must be descriptive'),
-  metric: z.string().min(1, 'Metric is required for auditability'),
+  // Not every achievement has a number: requiring one would push users to invent it
+  metric: z.string().optional(),
   source: z.string().min(1, 'Source document or context is required'),
   confidence: z.enum(['high', 'medium', 'low']),
-  domainTag: z.string().min(1, 'Domain tag is required'),
+  domainTag: z.string().optional(),
+  tools: z.array(z.string()).optional(),
 });
 
 export const JobParseSchema = z.object({

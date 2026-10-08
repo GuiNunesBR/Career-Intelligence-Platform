@@ -43,6 +43,20 @@ export class CareerLakeService {
     return this.lakeRepo.addProject(userId, proj);
   }
 
+  async deleteRecord(userId: string, entity: 'experience' | 'project' | 'skill' | 'evidence', id: string): Promise<boolean> {
+    if (!userId) throw new Error('User ID is required');
+    switch (entity) {
+      case 'experience':
+        return this.lakeRepo.deleteExperience(userId, id);
+      case 'project':
+        return this.lakeRepo.deleteProject(userId, id);
+      case 'skill':
+        return this.lakeRepo.deleteSkill(userId, id);
+      case 'evidence':
+        return this.lakeRepo.deleteEvidence(userId, id);
+    }
+  }
+
   async addSkill(userId: string, skill: Omit<Skill, 'id' | 'userId'>): Promise<Skill> {
     if (!userId) throw new Error('User ID is required');
     return this.lakeRepo.addSkill(userId, skill);

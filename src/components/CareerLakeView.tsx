@@ -8,6 +8,7 @@ import {
   EvidenceType,
   EvidenceConfidence,
 } from '../shared/types.js';
+import { normalizeForMatch } from '../shared/text.js';
 import {
   Database,
   Plus,
@@ -29,17 +30,47 @@ interface CareerLakeViewProps {
   onAddEvidence: (ev: Omit<Evidence, 'id' | 'userId' | 'createdAt'>) => Promise<void>;
   onRunAudit: () => void;
   onUploadCV?: (file: File) => Promise<void>;
+  onDeleteRecord?: (entity: 'experience' | 'project' | 'skill' | 'evidence', id: string) => Promise<void>;
+  /** Result of the last CV import (counts and warnings to review). */
+  importReport?: {
+    experiences?: number;
+    evidences?: number;
+    projects?: number;
+    skills?: number;
+    lowConfidence?: string[];
+    warnings?: string[];
+    merge?: { created: number; updated: number; removed: number; keptWithManualEvidence: string[] };
+  } | null;
+  onDismissImportReport?: () => void;
 }
 
 export const CareerLakeView: React.FC<CareerLakeViewProps> = ({
   lake,
   onAddExperience,
-  
+
   onAddSkill,
   onAddEvidence,
   onRunAudit,
   onUploadCV,
+  onDeleteRecord,
+  importReport,
+  onDismissImportReport,
 }) => {
+  const confirmDelete = (entity: 'experience' | 'project' | 'skill' | 'evidence', id: string, label: string) => {
+    if (!onDeleteRecord) return;
+    const extra = entity === 'experience' ? ' As evidências vinculadas também serão removidas.' : '';
+    if (window.confirm(`Remover "${label}" do Career Lake?${extra}`)) onDeleteRecord(entity, id);
+  };
+
+  /** Evidences that mention a skill (as a tool or in the statement). */
+  const evidencesForSkill = (skillName: string) => {
+    const key = normalizeForMatch(skillName);
+    return (lake.evidences || []).filter(
+      (ev) =>
+        (ev.tools || []).some((t) => normalizeForMatch(t) === key) ||
+        ` ${normalizeForMatch(ev.statement)} `.includes(` ${key} `)
+    );
+  };
   const [activeTab, setActiveTab] = useState<'evidences' | 'experiences' | 'projects' | 'skills' | 'languages' | 'profile'>('profile');
   const [isUploading, setIsUploading] = useState(false);
   const [evidenceFilter, setEvidenceFilter] = useState<string>('all');
@@ -108,15 +139,16 @@ export const CareerLakeView: React.FC<CareerLakeViewProps> = ({
     e.preventDefault();
     if (!newExpCompany.trim() || !newExpTitle.trim()) return;
 
+    // Only what the user typed: empty fields stay empty instead of getting placeholder values
     await onAddExperience({
       company: newExpCompany.trim(),
       title: newExpTitle.trim(),
-      domain: newExpDomain.trim() || 'General',
-      location: newExpLocation.trim() || 'São Paulo, Brazil',
-      startDate: newExpStartDate || '2022-01',
+      domain: newExpDomain.trim(),
+      location: newExpLocation.trim(),
+      startDate: newExpStartDate,
       isCurrent: true,
       employmentType: 'full-time',
-      description: newExpDesc.trim() || 'Strategic professional responsibilities and execution.',
+      description: newExpDesc.trim(),
     });
 
     setNewExpCompany('');
@@ -178,7 +210,7 @@ export const CareerLakeView: React.FC<CareerLakeViewProps> = ({
           <div className="flex items-center gap-2 shrink-0">
             <label className={`px-3.5 py-2 text-xs font-semibold text-white bg-blue-600 rounded-md hover:bg-blue-700 transition-colors flex items-center gap-1.5 cursor-pointer ${isUploading ? 'opacity-50 pointer-events-none' : ''}`}>
               <Plus className="w-3.5 h-3.5" /> {isUploading ? 'Analisando...' : 'Carregar CV (PDF)'}
-              <input type="file" accept=".pdf,.docx" className="hidden" onChange={handleFileUpload} disabled={isUploading} />
+              <input type="file" accept=".pdf,application/pdf" className="hidden" onChange={handleFileUpload} disabled={isUploading} />
             </label>
             <button
               onClick={() => setIsEvidenceModalOpen(true)}
@@ -265,6 +297,42 @@ export const CareerLakeView: React.FC<CareerLakeViewProps> = ({
         </div>
       </div>
 
+      {/* Review of the last CV import */}
+      {importReport && (
+        <div className="bg-white border border-amber-200 rounded-lg p-5 text-xs space-y-2">
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <h2 className="text-sm font-bold text-neutral-900">Revise a importação do currículo</h2>
+              <p className="text-neutral-600 mt-0.5">
+                {importReport.experiences ?? 0} experiência(s), {importReport.evidences ?? 0} evidência(s), {importReport.projects ?? 0} projeto(s) e {importReport.skills ?? 0} skill(s) importados
+                {importReport.merge && (
+                  <> · {importReport.merge.created} novo(s), {importReport.merge.updated} atualizado(s), {importReport.merge.removed} removido(s) por não estarem mais no CV</>
+                )}
+                .
+              </p>
+            </div>
+            {onDismissImportReport && (
+              <button onClick={onDismissImportReport} className="text-neutral-400 hover:text-neutral-700" aria-label="Fechar">✕</button>
+            )}
+          </div>
+          {(importReport.warnings || []).length > 0 && (
+            <ul className="space-y-1 text-amber-800">
+              {(importReport.warnings || []).map((w, idx) => (
+                <li key={idx}>• {w}</li>
+              ))}
+            </ul>
+          )}
+          {(importReport.merge?.keptWithManualEvidence || []).length > 0 && (
+            <p className="text-neutral-600">
+              Mantidos por terem evidências adicionadas por você: {importReport.merge!.keptWithManualEvidence.join(', ')}.
+            </p>
+          )}
+          <p className="text-neutral-500">
+            Corrija o que estiver errado removendo o registro (ícone de lixeira) e adicionando-o manualmente. Evidências com confiança LOW não foram encontradas literalmente no currículo.
+          </p>
+        </div>
+      )}
+
       {/* TAB 1: EVIDENCES (Core Entity) */}
       {activeTab === 'evidences' && (
         <div className="space-y-4">
@@ -346,7 +414,9 @@ export const CareerLakeView: React.FC<CareerLakeViewProps> = ({
                             {isDirect ? 'Evidência Direta' : 'Competência Transferível'}
                           </span>
                           <span aria-hidden="true">·</span>
-                          <span>Confiança: {ev.confidence.toUpperCase()}</span>
+                          <span className={ev.confidence === 'low' ? 'text-amber-700 font-semibold' : ''}>
+                            Confiança: {ev.confidence.toUpperCase()}
+                          </span>
                           {ev.domainTag && (
                             <>
                               <span aria-hidden="true">·</span>
@@ -366,7 +436,23 @@ export const CareerLakeView: React.FC<CareerLakeViewProps> = ({
                             Métrica quantitativa: {ev.metric}
                           </div>
                         )}
+                        {(ev.tools || []).length > 0 && (
+                          <div className="flex flex-wrap gap-1.5 text-[11px] text-neutral-500">
+                            {(ev.tools || []).map((t) => (
+                              <span key={t} className="bg-neutral-100 px-2 py-0.5 rounded">{t}</span>
+                            ))}
+                          </div>
+                        )}
                       </div>
+                      {onDeleteRecord && (
+                        <button
+                          onClick={() => confirmDelete('evidence', ev.id, ev.statement.slice(0, 60))}
+                          className="text-neutral-400 hover:text-red-600 transition-colors shrink-0"
+                          aria-label="Remover evidência"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      )}
                     </div>
 
                     {/* Source & Provenance Line */}
@@ -416,20 +502,21 @@ export const CareerLakeView: React.FC<CareerLakeViewProps> = ({
                     </div>
                     <div className="flex flex-col items-end gap-2">
                       <div className="flex gap-2">
-                        <button onClick={() => alert('Edição em desenvolvimento')} className="text-neutral-400 hover:text-blue-600 transition-colors">
-                          <Edit2 className="w-3.5 h-3.5" />
-                        </button>
-                        <button onClick={() => alert('Exclusão em desenvolvimento')} className="text-neutral-400 hover:text-red-600 transition-colors">
+                        <button
+                          onClick={() => confirmDelete('experience', exp.id, `${exp.title} — ${exp.company}`)}
+                          className="text-neutral-400 hover:text-red-600 transition-colors"
+                          aria-label="Remover experiência"
+                        >
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>
                       </div>
                       <div className="text-xs font-mono text-neutral-500">
-                        {exp.startDate} – {exp.isCurrent ? 'Presente' : exp.endDate}
+                        {exp.startDate || '—'} – {exp.isCurrent ? 'Presente' : exp.endDate || '—'}
                       </div>
                     </div>
                   </div>
 
-                  <p className="text-xs text-neutral-700 mt-2 leading-relaxed">{exp.description}</p>
+                  <p className="text-xs text-neutral-700 mt-2 leading-relaxed whitespace-pre-line">{exp.description}</p>
 
                   <div className="mt-4 pt-3 border-t border-neutral-100 flex items-center justify-between text-xs text-neutral-500">
                     <span>Domínio: {exp.domain}</span>
@@ -452,10 +539,11 @@ export const CareerLakeView: React.FC<CareerLakeViewProps> = ({
             {(lake.projects || []).map((proj) => (
               <div key={proj.id} className="bg-white border border-neutral-200 rounded-lg p-5 space-y-2 relative">
                 <div className="absolute top-4 right-4 flex gap-2">
-                  <button onClick={() => alert('Edição em desenvolvimento')} className="text-neutral-400 hover:text-blue-600 transition-colors">
-                    <Edit2 className="w-3.5 h-3.5" />
-                  </button>
-                  <button onClick={() => alert('Exclusão em desenvolvimento')} className="text-neutral-400 hover:text-red-600 transition-colors">
+                  <button
+                    onClick={() => confirmDelete('project', proj.id, proj.name)}
+                    className="text-neutral-400 hover:text-red-600 transition-colors"
+                    aria-label="Remover projeto"
+                  >
                     <Trash2 className="w-3.5 h-3.5" />
                   </button>
                 </div>
@@ -507,11 +595,14 @@ export const CareerLakeView: React.FC<CareerLakeViewProps> = ({
                   <th className="py-2.5 px-4">Categoria</th>
                   <th className="py-2.5 px-4">Proficiência</th>
                   <th className="py-2.5 px-4 text-right">Anos de Experiência</th>
+                  <th className="py-2.5 px-4">Comprovação</th>
                   <th className="py-2.5 px-4 text-right">Ações</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-neutral-100">
-                {(lake.skills || []).map((skill) => (
+                {(lake.skills || []).map((skill) => {
+                  const proofs = evidencesForSkill(skill.name);
+                  return (
                   <tr key={skill.id} className="hover:bg-neutral-50 transition-colors">
                     <td className="py-3 px-4 font-semibold text-neutral-900">{skill.name}</td>
                     <td className="py-3 px-4 text-neutral-600">{skill.category}</td>
@@ -519,18 +610,23 @@ export const CareerLakeView: React.FC<CareerLakeViewProps> = ({
                     <td className="py-3 px-4 text-right font-mono tabular-nums text-neutral-700">
                       {skill.yearsExperience} anos
                     </td>
+                    <td className="py-3 px-4 text-neutral-600" title={proofs.map((p) => p.statement).join('\n')}>
+                      {proofs.length ? `${proofs.length} evidência(s)` : <span className="text-neutral-400">Declarada (sem evidência)</span>}
+                    </td>
                     <td className="py-3 px-4 text-right">
                       <div className="flex justify-end gap-2">
-                        <button onClick={() => alert('Edição em desenvolvimento')} className="text-neutral-400 hover:text-blue-600 transition-colors">
-                          <Edit2 className="w-3.5 h-3.5" />
-                        </button>
-                        <button onClick={() => alert('Exclusão em desenvolvimento')} className="text-neutral-400 hover:text-red-600 transition-colors">
+                        <button
+                          onClick={() => confirmDelete('skill', skill.id, skill.name)}
+                          className="text-neutral-400 hover:text-red-600 transition-colors"
+                          aria-label="Remover skill"
+                        >
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>
                       </div>
                     </td>
                   </tr>
-                ))}
+                  );
+                })}
               </tbody>
             </table>
           </div>
@@ -615,6 +711,47 @@ export const CareerLakeView: React.FC<CareerLakeViewProps> = ({
               <p className="text-neutral-900 font-semibold mt-0.5">{(lake?.profile?.targetRoles || []).join(', ')}</p>
             </div>
           </div>
+
+          {lake?.profile?.contact && (
+            <div className="pt-4 border-t border-neutral-100">
+              <h4 className="text-xs font-semibold text-neutral-700 uppercase tracking-wider mb-2">Contato</h4>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1.5 text-xs">
+                {([
+                  ['Nome', lake.profile.contact.fullName],
+                  ['E-mail', lake.profile.contact.email],
+                  ['Telefone', lake.profile.contact.phone],
+                  ['LinkedIn', lake.profile.contact.linkedin],
+                  ['Cidade', [lake.profile.contact.city, lake.profile.contact.state, lake.profile.contact.country].filter(Boolean).join(', ')],
+                  ['Disponibilidade', lake.profile.contact.availability],
+                  ['Habilitação', lake.profile.contact.driverLicense],
+                  ['Outros links', (lake.profile.contact.otherLinks || []).join(', ')],
+                ] as Array<[string, string | undefined]>)
+                  .filter(([, value]) => value)
+                  .map(([label, value]) => (
+                    <div key={label}>
+                      <span className="text-neutral-500">{label}: </span>
+                      <span className="text-neutral-900 font-medium break-all">{value}</span>
+                    </div>
+                  ))}
+              </div>
+            </div>
+          )}
+
+          {(lake?.profile?.certifications || []).length > 0 && (
+            <div className="pt-4 border-t border-neutral-100">
+              <h4 className="text-xs font-semibold text-neutral-700 uppercase tracking-wider mb-2">Certificações</h4>
+              <div className="space-y-1.5">
+                {(lake.profile.certifications || []).map((cert, idx) => (
+                  <div key={idx} className="text-xs flex justify-between">
+                    <span className="font-semibold text-neutral-900">
+                      {cert.name}{cert.issuer && <span className="font-normal text-neutral-500"> — {cert.issuer}</span>}
+                    </span>
+                    <span className="font-mono text-neutral-500">{cert.year}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           <div className="pt-4 border-t border-neutral-100">
             <h4 className="text-xs font-semibold text-neutral-700 uppercase tracking-wider mb-2">Formação Acadêmica</h4>

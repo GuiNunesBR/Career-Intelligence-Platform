@@ -135,6 +135,8 @@ export const api = {
       method: 'POST',
       body: JSON.stringify(skill),
     }),
+  deleteLakeRecord: (entity: 'experience' | 'project' | 'skill' | 'evidence', id: string) =>
+    request<{ success: boolean }>(`/api/lake/${entity}/${id}`, { method: 'DELETE' }),
   addEvidence: (evidence: Omit<Evidence, 'id' | 'userId' | 'createdAt'>) =>
     request<{ evidence: Evidence }>('/api/lake/evidence', {
       method: 'POST',

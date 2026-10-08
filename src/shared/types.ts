@@ -31,6 +31,29 @@ export interface AuthSession {
   expiresAt: string;
 }
 
+/** Contact and personal data kept out of the headline. */
+export interface ContactInfo {
+  fullName?: string;
+  email?: string;
+  phone?: string;
+  linkedin?: string;
+  otherLinks?: string[];
+  city?: string;
+  state?: string;
+  country?: string;
+  availability?: string;
+  driverLicense?: string;
+}
+
+export interface Certification {
+  name: string;
+  issuer: string;
+  year: string;
+}
+
+/** Where a Lake record came from: imported from a CV (replaced on re-import) or added by the user. */
+export type RecordOrigin = 'cv' | 'manual';
+
 export interface CareerProfile {
   id: string;
   userId: string;
@@ -41,6 +64,8 @@ export interface CareerProfile {
   targetIndustries: string[];
   languages: Array<{ language: string; proficiency: string }>;
   education: Array<{ degree: string; institution: string; year: string; field: string }>;
+  contact?: ContactInfo;
+  certifications?: Certification[];
   createdAt: string;
   updatedAt: string;
 }
@@ -57,6 +82,7 @@ export interface Experience {
   domain: string;
   location: string;
   description: string;
+  origin?: RecordOrigin;
   createdAt: string;
   updatedAt: string;
 }
@@ -71,6 +97,7 @@ export interface Project {
   scope: string;
   technologies: string[];
   metrics?: string;
+  origin?: RecordOrigin;
   createdAt: string;
   updatedAt: string;
 }
@@ -82,6 +109,7 @@ export interface Skill {
   category: 'Functional' | 'Technical' | 'Domain' | 'Leadership' | 'Tool' | 'Soft' | 'Language';
   proficiency: 'Fundamental' | 'Competent' | 'Advanced' | 'Expert';
   yearsExperience: number;
+  origin?: RecordOrigin;
 }
 
 export interface Evidence {
@@ -95,6 +123,8 @@ export interface Evidence {
   source: string;
   confidence: EvidenceConfidence;
   domainTag?: string;
+  /** Tools/skills used in this achievement. */
+  tools?: string[];
   createdAt: string;
 }
 
@@ -150,16 +180,20 @@ export interface EvidenceMatrixItem {
   }>;
 }
 
+// Computed in code from the evidence matrix (src/shared/fitScore.ts).
+// null = the job has no requirement in that dimension (not applicable).
 export interface FitDimensions {
-  functionalFit: number;
-  domainFit: number;
-  technicalFit: number;
-  seniorityScopeFit: number;
-  leadershipFit: number;
-  stakeholderFit: number;
-  languageFit: number;
-  evidenceStrength: number;
-  transferability: number;
+  /** Absent on analyses created before deterministic scoring. */
+  overallFit?: number | null;
+  functionalFit: number | null;
+  domainFit: number | null;
+  technicalFit: number | null;
+  seniorityScopeFit: number | null;
+  leadershipFit: number | null;
+  stakeholderFit: number | null;
+  languageFit: number | null;
+  evidenceStrength: number | null;
+  transferability: number | null;
 }
 
 export interface FitAnalysis {
