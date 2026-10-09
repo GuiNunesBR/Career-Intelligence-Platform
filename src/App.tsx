@@ -8,11 +8,10 @@ import {
   CoverLetter,
   Application,
   BackgroundJob,
-  UserAutomation,
   ApplicationStatus,
   TailoringMode,
 } from './shared/types.js';
-import { api, getStoredToken, setStoredSession } from './lib/api.js';
+import { api, authFetch, getStoredToken, setStoredSession, SESSION_EXPIRED_EVENT } from './lib/api.js';
 import { TopBar } from './components/TopBar.js';
 import { DashboardView } from './components/DashboardView.js';
 import { CareerLakeView } from './components/CareerLakeView.js';
@@ -97,6 +96,20 @@ export default function App() {
     init();
   }, []);
 
+  // Expired or revoked session: back to the login form
+  useEffect(() => {
+    const onExpired = () => {
+      setCurrentUser(null);
+      setLake(null);
+      setJobs([]);
+      setApplications([]);
+      setBackgroundJobs([]);
+      showToast('Sua sessão expirou. Entre novamente.', 'error');
+    };
+    window.addEventListener(SESSION_EXPIRED_EVENT, onExpired);
+    return () => window.removeEventListener(SESSION_EXPIRED_EVENT, onExpired);
+  }, []);
+
   // Poll background jobs periodically if any is running/queued
   useEffect(() => {
     const hasActiveBgJobs = (backgroundJobs || []).some(
@@ -125,12 +138,11 @@ export default function App() {
   const loadUserData = async (_userId: string) => {
     setIsSyncing(true);
     try {
-      const [lakeRes, jobsRes, appsRes, bgRes, autoRes] = await Promise.all([
+      const [lakeRes, jobsRes, appsRes, bgRes] = await Promise.all([
         api.getLake(),
         api.getJobs(),
         api.getApplications(),
         api.getBackgroundJobs(),
-        api.getAutomations(),
       ]);
 
       setLake(lakeRes.lake);
@@ -239,13 +251,7 @@ export default function App() {
       const formData = new FormData();
       formData.append('file', file);
 
-      const response = await fetch('/api/lake/upload-cv', {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${getStoredToken()}`,
-        },
-        body: formData,
-      });
+      const response = await authFetch('/api/lake/upload-cv', { method: 'POST', body: formData });
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));

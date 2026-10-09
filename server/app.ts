@@ -9,8 +9,12 @@ import './worker.js';
 
 export const app = express();
 
+app.disable('x-powered-by');
+// Behind one reverse proxy in production (Render): use X-Forwarded-For for the client IP
+if (process.env.NODE_ENV === 'production') app.set('trust proxy', Number(process.env.TRUST_PROXY_HOPS || 1));
+
 app.use(securityHeaders);
-app.use(express.json({ limit: '10mb' }));
+app.use(express.json({ limit: '1mb' }));
 app.use(structuredLogger);
 app.use('/api', apiRouter);
 

@@ -50,7 +50,6 @@ export const CareerLakeView: React.FC<CareerLakeViewProps> = ({
 
   onAddSkill,
   onAddEvidence,
-  onRunAudit,
   onUploadCV,
   onDeleteRecord,
   importReport,

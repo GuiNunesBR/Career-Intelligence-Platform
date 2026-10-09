@@ -45,20 +45,27 @@ export function clearStoredSession(): void {
   localStorage.removeItem(USER_KEY);
 }
 
-async function request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
+/** Fired when the server rejects the stored token (expired or revoked session). */
+export const SESSION_EXPIRED_EVENT = 'career-lake:session-expired';
+
+/** fetch with the session token; a 401 on an authenticated call clears the session. */
+export async function authFetch(endpoint: string, options: RequestInit = {}): Promise<Response> {
   const token = getStoredToken();
-  const headers: Record<string, string> = {
-    'Content-Type': 'application/json',
-    ...(options.headers as Record<string, string>),
-  };
+  const headers = new Headers(options.headers);
+  if (token) headers.set('Authorization', `Bearer ${token}`);
 
-  if (token) {
-    headers['Authorization'] = `Bearer ${token}`;
+  const res = await fetch(endpoint, { ...options, headers });
+  if (res.status === 401 && token && !endpoint.startsWith('/api/auth/login')) {
+    clearStoredSession();
+    window.dispatchEvent(new Event(SESSION_EXPIRED_EVENT));
   }
+  return res;
+}
 
-  const res = await fetch(endpoint, {
+async function request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
+  const res = await authFetch(endpoint, {
     ...options,
-    headers,
+    headers: { 'Content-Type': 'application/json', ...(options.headers as Record<string, string>) },
   });
 
   if (!res.ok) {
@@ -185,7 +192,7 @@ export const api = {
   getAtsCheck: (jobId: string) => request<{ atsCheck: AtsCheckResult }>(`/api/jobs/${jobId}/cv/ats-check`),
   /** Downloads the ATS-friendly PDF of the tailored CV. */
   downloadCvPdf: async (jobId: string): Promise<{ blob: Blob; fileName: string }> => {
-    const res = await fetch(`/api/jobs/${jobId}/cv/pdf`, { headers: { Authorization: `Bearer ${getStoredToken()}` } });
+    const res = await authFetch(`/api/jobs/${jobId}/cv/pdf`);
     if (!res.ok) {
       const errorData = await res.json().catch(() => ({}));
       throw new Error(errorData.error?.message || errorData.message || `HTTP ${res.status}`);

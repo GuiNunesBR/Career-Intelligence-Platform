@@ -345,12 +345,10 @@ export async function runAIValidationTests(): Promise<void> {
   await assert.rejects(
     async () => tailoringRegressionService.generateTailoredCV(userA, jobA.id, 'balanced'),
     (err: any) => {
+      assert.strictEqual(err.code, 'AI_OUTPUT_INVALID', `Error must be AI_OUTPUT_INVALID, got: ${err.code} ${err.message}`);
+      assert.strictEqual(err.status, 422, 'Grounding failure must be a 422 with a user-facing message');
       assert.ok(
-        err.message.includes('AI_OUTPUT_INVALID'),
-        `Error must be AI_OUTPUT_INVALID, got: ${err.message}`
-      );
-      assert.ok(
-        err.message.includes('All AI selected experiences failed grounding validation against the user Career Lake'),
+        err.message.includes('Career Lake'),
         `Error message must explain grounding failure against Career Lake, got: ${err.message}`
       );
       return true;

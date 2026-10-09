@@ -61,8 +61,9 @@ export class TailoringService {
     // If the model proposed experiences but none belong to this user, nothing can be trusted
     const proposed = Array.isArray(raw?.selectedExperiences) ? raw.selectedExperiences.length : 0;
     if (proposed > 0 && grounded.selectedExperiences.length === 0) {
-      throw new Error(
-        'AI_OUTPUT_INVALID: All AI selected experiences failed grounding validation against the user Career Lake'
+      throw Object.assign(
+        new Error('O modelo de IA selecionou experiências que não existem no seu Career Lake; nada foi salvo. Tente gerar novamente.'),
+        { status: 422, code: 'AI_OUTPUT_INVALID' }
       );
     }
 

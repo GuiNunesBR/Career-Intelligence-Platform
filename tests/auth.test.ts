@@ -1,6 +1,10 @@
 import assert from 'assert';
 import { authService } from '../server/container.js';
 import { LoginSchema } from '../server/validation/schemas.js';
+import { eq } from 'drizzle-orm';
+import { db } from '../server/db/index.js';
+import { sessions } from '../server/db/schema.js';
+import { hashSessionToken } from '../server/repositories/sqlite.user.repository.js';
 
 export async function runAuthTests(): Promise<void> {
   console.log('  [TEST SUITE] Auth & Identity Hardening');
@@ -94,4 +98,23 @@ export async function runAuthTests(): Promise<void> {
   const revokedUser = await authService.verifySession(loginResult.session.token);
   assert.strictEqual(revokedUser, null, 'Revoked session must no longer authenticate');
   console.log('    ✓ Logout revokes session');
+
+  // Tokens are random and only their hash is stored
+  const s1 = await authService.login({ email: testEmail, password: testPassword });
+  const s2 = await authService.login({ email: testEmail, password: testPassword });
+  assert.notStrictEqual(s1.session.token, s2.session.token, 'Each login must get a distinct token');
+  assert.ok(s1.session.token.length >= 40, 'Token must carry at least 256 bits of entropy');
+  const stored = await db.select().from(sessions).where(eq(sessions.tokenHash, s1.session.token));
+  assert.strictEqual(stored.length, 0, 'The raw token must never be stored');
+  const hashed = await db.select().from(sessions).where(eq(sessions.tokenHash, hashSessionToken(s1.session.token)));
+  assert.strictEqual(hashed.length, 1, 'The token hash must be stored');
+  console.log('    ✓ Session token is random and stored only as SHA-256 hash');
+
+  // Expired sessions are rejected (and removed)
+  await db.update(sessions).set({ expiresAt: new Date(Date.now() - 1000).toISOString() }).where(eq(sessions.id, hashed[0].id));
+  assert.strictEqual(await authService.verifySession(s1.session.token), null, 'Expired session must not authenticate');
+  const afterExpiry = await db.select().from(sessions).where(eq(sessions.id, hashed[0].id));
+  assert.strictEqual(afterExpiry.length, 0, 'Expired session must be deleted on lookup');
+  assert.ok(await authService.verifySession(s2.session.token), 'Other sessions stay valid');
+  console.log('    ✓ Expired session rejected');
 }

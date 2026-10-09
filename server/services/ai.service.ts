@@ -13,7 +13,6 @@ import {
   UserCareerLake,
   Job,
   FitAnalysis,
-  TailoredCV,
   CoverLetter,
   TailoringMode,
 } from '../../src/shared/types.js';

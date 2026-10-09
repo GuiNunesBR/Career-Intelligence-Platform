@@ -1,8 +1,17 @@
-import { eq } from 'drizzle-orm';
+import { createHash, randomBytes, randomUUID } from 'crypto';
+import { and, eq, lt } from 'drizzle-orm';
 import { IUserRepository } from './interfaces.js';
 import { User, SanitizedUser, AuthSession } from '../../src/shared/types.js';
 import { db } from '../db/index.js';
 import { users, sessions } from '../db/schema.js';
+
+/** Session lifetime; the client must log in again after this. */
+export const SESSION_TTL_MS = 1000 * 60 * 60 * 24 * 7;
+
+/** Only this hash is stored, so a leaked database does not leak usable tokens. */
+export function hashSessionToken(token: string): string {
+  return createHash('sha256').update(token).digest('hex');
+}
 
 export class SqliteUserRepository implements IUserRepository {
   async getAllUsers(): Promise<SanitizedUser[]> {
@@ -51,7 +60,7 @@ export class SqliteUserRepository implements IUserRepository {
   }
 
   async createUser(email: string, name: string, passwordHash?: string, role?: string): Promise<User> {
-    const id = `usr_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+    const id = `usr_${randomUUID()}`;
     const [u] = await db.insert(users).values({
       id,
       email,
@@ -75,20 +84,24 @@ export class SqliteUserRepository implements IUserRepository {
   }
 
   async createSession(userId: string): Promise<AuthSession> {
-    const token = `sess_${Date.now()}_${Math.random().toString(36).substring(2)}`;
+    // 256 bits from the CSPRNG; the raw token is returned once and never stored
+    const token = `sess_${randomBytes(32).toString('base64url')}`;
+    const now = new Date();
+    // Housekeeping: drop this user's expired sessions
+    await db.delete(sessions).where(and(eq(sessions.userId, userId), lt(sessions.expiresAt, now.toISOString())));
     const [sess] = await db.insert(sessions).values({
-      id: `sess_id_${Date.now()}`,
+      id: `sess_id_${randomUUID()}`,
       userId,
-      tokenHash: token,
-      createdAt: new Date().toISOString(),
-      expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24 * 7).toISOString(),
+      tokenHash: hashSessionToken(token),
+      createdAt: now.toISOString(),
+      expiresAt: new Date(now.getTime() + SESSION_TTL_MS).toISOString(),
     }).returning();
 
     const userResult = await db.select().from(users).where(eq(users.id, userId)).limit(1);
     const u = userResult[0];
 
     return {
-      token: sess.tokenHash,
+      token,
       userId: sess.userId,
       expiresAt: sess.expiresAt,
       user: {
@@ -104,16 +117,21 @@ export class SqliteUserRepository implements IUserRepository {
   }
 
   async getSession(token: string): Promise<AuthSession | null> {
-    const result = await db.select().from(sessions).where(eq(sessions.tokenHash, token)).limit(1);
+    const tokenHash = hashSessionToken(token);
+    const result = await db.select().from(sessions).where(eq(sessions.tokenHash, tokenHash)).limit(1);
     if (result.length === 0) return null;
     const sess = result[0];
     if (sess.revokedAt) return null;
+    if (Date.parse(sess.expiresAt) <= Date.now()) {
+      await db.delete(sessions).where(eq(sessions.id, sess.id));
+      return null;
+    }
     const userResult = await db.select().from(users).where(eq(users.id, sess.userId)).limit(1);
     if (userResult.length === 0) return null;
     const u = userResult[0];
 
     return {
-      token: sess.tokenHash,
+      token,
       userId: sess.userId,
       expiresAt: sess.expiresAt,
       user: {
@@ -129,6 +147,6 @@ export class SqliteUserRepository implements IUserRepository {
   }
 
   async deleteSession(token: string): Promise<void> {
-    await db.delete(sessions).where(eq(sessions.tokenHash, token));
+    await db.delete(sessions).where(eq(sessions.tokenHash, hashSessionToken(token)));
   }
 }

@@ -13,10 +13,8 @@ import {
 import { searchAgentRepository } from './repositories/sqlite.search_agent.repository.js';
 import { authMiddleware, AuthenticatedRequest } from './middleware/auth.middleware.js';
 import multer from 'multer';
-import { createRequire } from 'module';
-const require = createRequire(import.meta.url);
 import { validateBody } from './middleware/validation.middleware.js';
-import { authRateLimiter } from './middleware/security.middleware.js';
+import { aiRateLimiter, authRateLimiter, renderRateLimiter } from './middleware/security.middleware.js';
 import {
   LoginSchema,
   RegisterSchema,
@@ -107,7 +105,7 @@ const uploadSingleCV = (req: AuthenticatedRequest, res: Response, next: NextFunc
     next(err);
   });
 
-apiRouter.post('/lake/upload-cv', authMiddleware, uploadSingleCV, async (req: AuthenticatedRequest, res, next) => {
+apiRouter.post('/lake/upload-cv', authMiddleware, aiRateLimiter, uploadSingleCV, async (req: AuthenticatedRequest, res, next) => {
   try {
     if (!req.file) {
       return res.status(400).json({ error: { code: 'NO_FILE', message: 'Nenhum arquivo enviado.' } });
@@ -249,6 +247,7 @@ apiRouter.get('/jobs', authMiddleware, async (req: AuthenticatedRequest, res, ne
 apiRouter.post(
   '/jobs/parse',
   authMiddleware,
+  aiRateLimiter,
   validateBody(JobParseSchema),
   async (req: AuthenticatedRequest, res, next) => {
     try {
@@ -291,6 +290,7 @@ apiRouter.delete('/jobs/:id', authMiddleware, async (req: AuthenticatedRequest, 
 apiRouter.post(
   '/analysis/fit',
   authMiddleware,
+  aiRateLimiter,
   validateBody(FitAnalysisRequestSchema),
   async (req: AuthenticatedRequest, res, next) => {
     try {
@@ -321,7 +321,7 @@ apiRouter.get('/jobs/:jobId/analysis', authMiddleware, async (req: Authenticated
   }
 });
 
-apiRouter.post('/jobs/:jobId/analyze', authMiddleware, async (req: AuthenticatedRequest, res, next) => {
+apiRouter.post('/jobs/:jobId/analyze', authMiddleware, aiRateLimiter, async (req: AuthenticatedRequest, res, next) => {
   try {
     const analysis = await analysisService.runFitAnalysis(req.user!.id, req.params.jobId);
     res.json({ analysis });
@@ -337,6 +337,7 @@ apiRouter.post('/jobs/:jobId/analyze', authMiddleware, async (req: Authenticated
 apiRouter.post(
   '/tailor/cv',
   authMiddleware,
+  aiRateLimiter,
   validateBody(TailorCVRequestSchema),
   async (req: AuthenticatedRequest, res, next) => {
     try {
@@ -360,6 +361,7 @@ apiRouter.get('/tailor/cv/:jobId', authMiddleware, async (req: AuthenticatedRequ
 apiRouter.post(
   '/tailor/cover-letter',
   authMiddleware,
+  aiRateLimiter,
   validateBody(CoverLetterRequestSchema),
   async (req: AuthenticatedRequest, res, next) => {
     try {
@@ -391,7 +393,7 @@ apiRouter.get('/jobs/:jobId/cv', authMiddleware, async (req: AuthenticatedReques
 });
 
 // ATS-friendly PDF of the tailored CV (single column, real text layer)
-apiRouter.get('/jobs/:jobId/cv/pdf', authMiddleware, async (req: AuthenticatedRequest, res, next) => {
+apiRouter.get('/jobs/:jobId/cv/pdf', authMiddleware, renderRateLimiter, async (req: AuthenticatedRequest, res, next) => {
   try {
     const cv = await tailoringService.getTailoredCV(req.user!.id, req.params.jobId);
     if (!cv) return res.status(404).json({ error: { code: 'NOT_FOUND', message: 'Gere o CV antes de exportar.' } });
@@ -407,7 +409,7 @@ apiRouter.get('/jobs/:jobId/cv/pdf', authMiddleware, async (req: AuthenticatedRe
 });
 
 // Reads the generated PDF back like an ATS and reports sections, contact and keyword coverage
-apiRouter.get('/jobs/:jobId/cv/ats-check', authMiddleware, async (req: AuthenticatedRequest, res, next) => {
+apiRouter.get('/jobs/:jobId/cv/ats-check', authMiddleware, renderRateLimiter, async (req: AuthenticatedRequest, res, next) => {
   try {
     const cv = await tailoringService.getTailoredCV(req.user!.id, req.params.jobId);
     if (!cv) return res.status(404).json({ error: { code: 'NOT_FOUND', message: 'Gere o CV antes da checagem ATS.' } });
@@ -419,7 +421,7 @@ apiRouter.get('/jobs/:jobId/cv/ats-check', authMiddleware, async (req: Authentic
   }
 });
 
-apiRouter.post('/jobs/:jobId/cv', authMiddleware, async (req: AuthenticatedRequest, res, next) => {
+apiRouter.post('/jobs/:jobId/cv', authMiddleware, aiRateLimiter, async (req: AuthenticatedRequest, res, next) => {
   try {
     const mode = req.body?.mode || 'balanced';
     // No language chosen: the service follows the job posting's language
@@ -440,7 +442,7 @@ apiRouter.get('/jobs/:jobId/cover-letter', authMiddleware, async (req: Authentic
   }
 });
 
-apiRouter.post('/jobs/:jobId/cover-letter', authMiddleware, async (req: AuthenticatedRequest, res, next) => {
+apiRouter.post('/jobs/:jobId/cover-letter', authMiddleware, aiRateLimiter, async (req: AuthenticatedRequest, res, next) => {
   try {
     const coverLetter = await tailoringService.generateCoverLetter(req.user!.id, req.params.jobId);
     res.json({ coverLetter });
@@ -545,12 +547,14 @@ apiRouter.get('/background-jobs', authMiddleware, handleGetWorkerJobs);
 apiRouter.post(
   '/worker/enqueue',
   authMiddleware,
+  aiRateLimiter,
   validateBody(BackgroundJobEnqueueSchema),
   handleEnqueueJob
 );
 apiRouter.post(
   '/background-jobs',
   authMiddleware,
+  aiRateLimiter,
   validateBody(BackgroundJobEnqueueSchema),
   handleEnqueueJob
 );
@@ -654,7 +658,7 @@ apiRouter.delete('/automations/:id', authMiddleware, async (req: AuthenticatedRe
   }
 });
 
-apiRouter.post('/automations/:id/trigger', authMiddleware, async (req: AuthenticatedRequest, res, next) => {
+apiRouter.post('/automations/:id/trigger', authMiddleware, aiRateLimiter, async (req: AuthenticatedRequest, res, next) => {
   try {
     const automation = await automationService.triggerAutomation(req.user!.id, req.params.id);
     res.json({ automation });
@@ -675,7 +679,7 @@ apiRouter.get('/search-agents', authMiddleware, async (req: AuthenticatedRequest
   }
 });
 
-apiRouter.post('/search-agents', authMiddleware, validateBody(SearchAgentCreateSchema), async (req: AuthenticatedRequest, res, next) => {
+apiRouter.post('/search-agents', authMiddleware, aiRateLimiter, validateBody(SearchAgentCreateSchema), async (req: AuthenticatedRequest, res, next) => {
   try {
     const agent = await searchAgentRepository.create(req.user!.id, req.body);
     // If there's already an active search loop, it will pick this up on its next cycle.

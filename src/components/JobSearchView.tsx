@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { BackgroundJob, Job, FitAnalysis } from '../shared/types.js';
-import { Search, Briefcase, MapPin, Building, Calendar, Star, FileText, Globe, ExternalLink } from 'lucide-react';
+import { Search, Briefcase, MapPin, Building, Star, FileText, Globe, ExternalLink } from 'lucide-react';
 import { api } from '../lib/api.js';
 import { fitBand, headlineScore } from '../shared/fitScore.js';
 
@@ -28,9 +28,7 @@ export const JobSearchView: React.FC<JobSearchViewProps> = ({
   jobs,
   onTriggerJob,
   onRefresh,
-  userId,
   onNavigate,
-  onSaveAsApplication,
 }) => {
   const [agents, setAgents] = useState<any[]>([]);
   const [isCreatingAgent, setIsCreatingAgent] = useState(false);
