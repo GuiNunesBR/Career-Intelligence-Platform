@@ -262,11 +262,11 @@ export default function App() {
 
       const jobId = data.jobId;
       if (jobId) {
-        showToast('Processando CV em background... Isso pode levar alguns segundos.', 'info');
-
-        // Parsing may retry the model several times; poll for up to ~5 minutes
+        showToast('Processando o currículo... costuma levar menos de um minuto.', 'info');
+        // Follow the job until it ends (the worker itself gives up after its AI retries)
         let completed = false;
-        for (let attempts = 0; attempts < 150 && !completed; attempts++) {
+        const deadline = Date.now() + 15 * 60_000;
+        while (!completed && Date.now() < deadline) {
           await new Promise(r => setTimeout(r, 2000));
           const jobsRes = await api.getBackgroundJobs();
           const job = jobsRes.backgroundJobs.find((j) => j.id === jobId);

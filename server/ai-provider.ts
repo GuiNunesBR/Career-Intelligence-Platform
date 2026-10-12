@@ -92,6 +92,12 @@ export interface GeminiJSONRequest<T> {
   /** Optional Zod schema: output failing validation is retried, then rejected as AI_INVALID_OUTPUT. */
   validate?: ZodType<T>;
   timeoutMs?: number;
+  /**
+   * 'fast' tries the fallback (lite) model first. For extraction tasks with long outputs
+   * (resume/job parsing): the lite model answers in seconds where the primary can take minutes,
+   * and code-side checks (verbatim excerpts, numbers) guard precision.
+   */
+  prefer?: 'quality' | 'fast';
 }
 
 /**
@@ -101,10 +107,12 @@ export interface GeminiJSONRequest<T> {
  */
 export async function callGeminiJSON<T = any>(req: GeminiJSONRequest<T>): Promise<T> {
   const client = getClient();
-  const models = PRIMARY_MODEL === FALLBACK_MODEL ? [PRIMARY_MODEL] : [PRIMARY_MODEL, FALLBACK_MODEL];
+  const ordered = req.prefer === 'fast' ? [FALLBACK_MODEL, PRIMARY_MODEL] : [PRIMARY_MODEL, FALLBACK_MODEL];
+  const models = [...new Set(ordered)];
   let lastError: AIError = new AIError('AI_ERROR');
 
-  for (const model of models) {
+  for (const [modelIndex, model] of models.entries()) {
+    const isLastModel = modelIndex === models.length - 1;
     for (let attempt = 1; attempt <= MAX_ATTEMPTS_PER_MODEL; attempt++) {
       const started = Date.now();
       try {
@@ -141,6 +149,8 @@ export async function callGeminiJSON<T = any>(req: GeminiJSONRequest<T>): Promis
         );
         if (lastError.code === 'AI_NOT_CONFIGURED') throw lastError;
         if (!RETRYABLE.includes(lastError.code)) break; // e.g. model not found: go to next model
+        // A slow or overloaded model tends to stay that way: switch models instead of waiting again
+        if (!isLastModel && (lastError.code === 'AI_TIMEOUT' || lastError.code === 'AI_UNAVAILABLE')) break;
         if (attempt < MAX_ATTEMPTS_PER_MODEL) {
           const base = lastError.code === 'AI_RATE_LIMIT' ? 5000 : 2000;
           await sleep(base * 2 ** (attempt - 1) + Math.random() * 500);

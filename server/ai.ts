@@ -44,6 +44,7 @@ const UNTRUSTED_INPUT_RULE =
 export async function parseJobText(rawText: string): Promise<Omit<Job, 'id' | 'userId' | 'createdAt' | 'updatedAt'>> {
   const parsed = await callGeminiJSON({
     task: 'job_parse',
+    prefer: 'fast',
     validate: JobParsingAIOutputSchema,
     contents: `You are an expert career intelligence parser. Extract structured job details from the posting below.
 ${UNTRUSTED_INPUT_RULE}
@@ -569,6 +570,7 @@ export type ParsedResume = z.infer<typeof ResumeRawOutputSchema>;
 export async function parseResumeToLake(rawText: string): Promise<ParsedResume> {
   return callGeminiJSON({
     task: 'resume_parse',
+    prefer: 'fast',
     validate: ResumeRawOutputSchema,
     contents: `You are an expert ATS parser and career intelligence system.
 Extract the information from this resume text into structured JSON.
