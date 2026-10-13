@@ -45,6 +45,7 @@ export async function parseJobText(rawText: string): Promise<Omit<Job, 'id' | 'u
   const parsed = await callGeminiJSON({
     task: 'job_parse',
     prefer: 'fast',
+    timeoutMs: 45_000,
     validate: JobParsingAIOutputSchema,
     contents: `You are an expert career intelligence parser. Extract structured job details from the posting below.
 ${UNTRUSTED_INPUT_RULE}
@@ -163,6 +164,8 @@ export async function performEvidenceFitAnalysis(
 
   const parsed = await callGeminiJSON({
     task: 'fit_analysis',
+    // The lite model classifies in ~15s vs 60-90s; scores are computed in code and every cited source is checked
+    prefer: 'fast',
     validate: FitRawOutputSchema,
     contents: `You are the core intelligence engine of Career Lake.
 Your task is to conduct an Evidence-First Job Fit Analysis.

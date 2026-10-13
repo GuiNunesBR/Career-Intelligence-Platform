@@ -15,6 +15,7 @@ const { runAutomationTests } = await import('./automation.test.js');
 const { runIntegrationIsolationTest } = await import('./integration_isolation.test.js');
 const { runDatabasePhase2Tests } = await import('./database_phase2.test.js');
 const { runApiIntegrationTests } = await import('./api_integration.test.js');
+const { runJobSearchTests } = await import('./job_search.test.js');
 
 async function main() {
   console.log('====================================================');
@@ -34,6 +35,7 @@ async function main() {
     { name: '6. End-to-End Cross-User Isolation (User A vs User B)', fn: runIntegrationIsolationTest },
     { name: '7. Phase 2 Database Integration Tests', fn: runDatabasePhase2Tests },
     { name: '8. HTTP API Integration (End-to-End routes with Postgres)', fn: runApiIntegrationTests },
+    { name: '9. Prompt-driven Job Search', fn: runJobSearchTests },
   ];
 
   for (const suite of suites) {

@@ -1,23 +1,27 @@
 import { eq, and } from 'drizzle-orm';
 import { db } from '../db/index.js';
 import { searchAgents } from '../db/schema.js';
+import { randomUUID } from 'crypto';
+import type { SearchPlan } from '../../src/shared/searchPlan.js';
 
 export class SqliteSearchAgentRepository {
   async getByUserId(userId: string) {
     return db.select().from(searchAgents).where(eq(searchAgents.userId, userId));
   }
 
-  async create(userId: string, data: any) {
-    const id = `agent_${Date.now()}`;
+  /** Saved prompt search: the plan is what runs; roles/seniority are kept for older readers. */
+  async create(userId: string, data: { name: string; prompt?: string; plan: SearchPlan; frequency?: string }) {
     const [inserted] = await db.insert(searchAgents).values({
-      id,
+      id: `agent_${randomUUID()}`,
       userId,
       name: data.name,
-      roles: data.roles || [],
-      seniority: data.seniority || [],
-      location: data.location || '',
-      mode: data.mode || '',
+      roles: data.plan.terms,
+      seniority: data.plan.preferredSeniority,
+      location: data.plan.locations.map((l) => l.label).join('; '),
+      mode: '',
       frequency: data.frequency || 'manual',
+      prompt: data.prompt || null,
+      plan: data.plan,
       isActive: true,
     }).returning();
     return inserted;

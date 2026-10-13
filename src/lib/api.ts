@@ -17,6 +17,7 @@ import {
   CareerProfile,
   TailoringMode,
 } from '../shared/types.js';
+import type { SearchPlan } from '../shared/searchPlan.js';
 
 const TOKEN_KEY = 'career_lake_token';
 const USER_KEY = 'career_lake_user';
@@ -80,6 +81,74 @@ async function request<T>(endpoint: string, options: RequestInit = {}): Promise<
   }
 
   return res.json();
+}
+
+export interface SearchRunStats {
+  searches: number;
+  linkedinRequests: number;
+  cardsFound: number;
+  uniqueCards: number;
+  duplicates: number;
+  alreadySaved: number;
+  titleFiltered: number;
+  offTopic: number;
+  foreign: number;
+  opened: number;
+  unavailable: number;
+  reposts: number;
+  ruleDiscarded: number;
+  rulesOverturned: number;
+  remoteNotConfirmed: number;
+  passed: number;
+  belowTarget: number;
+  analyzed: number;
+  analysisFailed: number;
+  screeningFailed: number;
+  saved?: number;
+  cvsGenerated?: number;
+}
+
+export interface SearchRunSummary {
+  id: string;
+  status: BackgroundJob['status'];
+  progress: number;
+  createdAt: string;
+  finishedAt?: string;
+  prompt: string | null;
+  terms: string[];
+  stats: SearchRunStats | null;
+}
+
+export interface SearchRunItem {
+  job: Job;
+  analysis: FitAnalysis | null;
+  hasCv: boolean;
+}
+
+export interface SearchRunDetail {
+  run: {
+    id: string;
+    status: BackgroundJob['status'];
+    progress: number;
+    createdAt: string;
+    finishedAt?: string;
+    logs: string[];
+    prompt: string | null;
+    plan: SearchPlan | null;
+    stats: SearchRunStats | null;
+    discarded: Array<{ title: string; company: string; url: string; reason: string }>;
+  };
+  items: SearchRunItem[];
+  alreadySaved: SearchRunItem[];
+}
+
+export interface SavedSearch {
+  id: string;
+  name: string;
+  prompt?: string | null;
+  plan?: SearchPlan | null;
+  roles: string[];
+  createdAt: string;
 }
 
 export interface AtsCheckResult {
@@ -261,8 +330,17 @@ export const api = {
     }),
 
   // Search Agents
-  getSearchAgents: () => request<{ agents: any[] }>('/api/search-agents'),
-  createSearchAgent: (data: any) => request<{ agent: any }>('/api/search-agents', { method: 'POST', body: JSON.stringify(data) }),
+  getSearchAgents: () => request<{ agents: SavedSearch[] }>('/api/search-agents'),
+  createSearchAgent: (data: { name: string; prompt?: string; plan: SearchPlan }) =>
+    request<{ agent: SavedSearch }>('/api/search-agents', { method: 'POST', body: JSON.stringify(data) }),
+
+  // Prompt-driven job search
+  planJobSearch: (prompt: string) =>
+    request<{ plan: SearchPlan; suggestedTerms: string[] }>('/api/job-search/plan', { method: 'POST', body: JSON.stringify({ prompt }) }),
+  runJobSearch: (plan: SearchPlan, prompt?: string) =>
+    request<{ backgroundJob: BackgroundJob }>('/api/job-search/run', { method: 'POST', body: JSON.stringify({ plan, prompt }) }),
+  getSearchRuns: () => request<{ runs: SearchRunSummary[] }>('/api/job-search/runs'),
+  getSearchRun: (id: string) => request<SearchRunDetail>(`/api/job-search/runs/${id}`),
   deleteSearchAgent: (id: string) => request<{ success: boolean }>(`/api/search-agents/${id}`, { method: 'DELETE' }),
 
   // Stats

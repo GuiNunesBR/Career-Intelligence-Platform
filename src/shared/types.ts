@@ -1,3 +1,4 @@
+import type { JobSearchMeta } from './searchPlan.js';
 export type EvidenceType = 'direct' | 'derived' | 'transferable' | 'gap' | 'unknown';
 export type EvidenceStrength = 'high' | 'medium' | 'low' | 'none';
 export type EvidenceConfidence = 'high' | 'medium' | 'low';
@@ -160,6 +161,8 @@ export interface Job {
   requirements: JobRequirement[];
   rawText: string;
   url?: string;
+  /** Set on jobs found by the prompt-driven search. */
+  searchMeta?: JobSearchMeta;
   createdAt: string;
   updatedAt: string;
 }

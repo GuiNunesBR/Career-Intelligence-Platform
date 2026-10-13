@@ -73,12 +73,22 @@ export const EvidenceCreateSchema = z.object({
   tools: z.array(z.string()).optional(),
 });
 
+// Plans are bounded and cleaned by sanitizePlan (server/services/job-search.service.ts)
+const SearchPlanBody = z.object({ terms: z.array(z.string()).min(1, 'Informe pelo menos um termo de busca.') }).passthrough();
+
+export const SearchPromptSchema = z.object({
+  prompt: z.string().trim().min(5, 'Descreva a busca.').max(4000),
+});
+
+export const SearchRunSchema = z.object({
+  plan: SearchPlanBody,
+  prompt: z.string().max(4000).optional(),
+});
+
 export const SearchAgentCreateSchema = z.object({
   name: z.string().trim().min(1).max(100),
-  roles: z.array(z.string().trim().min(1).max(80)).min(1).max(10),
-  seniority: z.array(z.enum(['Estágio', 'Júnior', 'Pleno', 'Sênior', 'Especialista', 'Liderança'])).min(1),
-  location: z.string().max(100).optional(),
-  mode: z.string().max(50).optional(),
+  prompt: z.string().max(4000).optional(),
+  plan: SearchPlanBody,
   frequency: z.enum(['manual', '1h', '3h', 'daily']).default('manual'),
 });
 

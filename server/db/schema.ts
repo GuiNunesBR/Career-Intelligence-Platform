@@ -148,6 +148,7 @@ export const jobs = sqliteTable('jobs', {
   requirements: text('requirements', { mode: 'json' }).notNull().$type<any>(),
   rawText: text('raw_text').notNull(),
   url: text('url'),
+  searchMeta: text('search_meta', { mode: 'json' }).$type<any>(),
   createdAt: text().default(sql`CURRENT_TIMESTAMP`).notNull(),
   updatedAt: text().default(sql`CURRENT_TIMESTAMP`).notNull()
 }, (table) => {
@@ -305,6 +306,8 @@ export const searchAgents = sqliteTable('search_agents', {
   location: text('location'),
   mode: text('mode'),
   frequency: text('frequency').notNull(), // 'manual', '1h', '3h', 'daily'
+  prompt: text('prompt'),
+  plan: text('plan', { mode: 'json' }).$type<any>(),
   isActive: integer('is_active', { mode: 'boolean' }).default(true).notNull(),
   lastRunAt: text('last_run_at'),
   createdAt: text().default(sql`CURRENT_TIMESTAMP`).notNull(),

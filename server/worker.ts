@@ -3,12 +3,15 @@ import {
   careerLakeRepository,
   jobRepository,
   analysisRepository,
-  aiService
+  aiService,
+  tailoringService,
 } from './container.js';
-import { jobScraperService } from './services/job-scraper.service.js';
+import { JobScraperService } from './services/job-scraper.service.js';
 import { AIError } from './ai-provider.js';
 import { buildResumeImport } from './services/resume-import.service.js';
-import { runJobSearch, agentFromPayload } from './services/job-search.service.js';
+import { runPlanSearch, sanitizePlan, planFromLegacyAgent } from './services/job-search.service.js';
+import { screenJobPostings, verifyRuleClaims } from './ai-search.js';
+import { PLAN_LIMITS, recommend } from '../src/shared/searchPlan.js';
 import { randomUUID } from 'crypto';
 import { BackgroundJob } from '../src/shared/types.js';
 
@@ -174,48 +177,77 @@ export class BackgroundWorker {
         job.result = { tailoredStatus: 'up_to_date' };
         job.logs.push(`[${new Date().toISOString()}] Scheduled tailoring background process completed.`);
       } else if (job.jobType === 'job_search_agent') {
-        job.progress = 10;
-        const agent = agentFromPayload(job.payload);
-        if (!agent.roles.length) throw new Error('Search agent has no roles configured');
-        job.logs.push(
-          `[${new Date().toISOString()}] Agente: cargos=${agent.roles.join(', ')} | níveis=${agent.seniority.join(', ') || 'todos'} | local=${agent.location || 'Brasil'} | modalidade=${agent.modes.join(', ') || 'todas'}`
+        job.progress = 5;
+        const plan = job.payload?.plan ? sanitizePlan(job.payload.plan) : planFromLegacyAgent(job.payload);
+        if (!plan.terms.length) throw new Error('A busca não tem termos.');
+        const log = async (message: string) => {
+          job.logs.push(`[${new Date().toISOString()}] ${message}`);
+          job.progress = Math.min(95, job.progress + 2);
+          await jobQueueRepository.saveBackgroundJob(userId, job);
+        };
+        await log(
+          `Plano: ${plan.terms.length} termos × ${plan.locations.length} locais, últimos ${plan.postedWithinDays} dias, meta de ${plan.targetResults} vagas.`
         );
-        await jobQueueRepository.saveBackgroundJob(userId, job);
 
         const existingJobs = await jobRepository.getJobs(userId);
-        const { results, stats } = await runJobSearch(agent, lake, existingJobs, {
-          scraper: jobScraperService,
+        const { items, discarded, alreadySavedJobIds, stats } = await runPlanSearch(plan, lake, existingJobs, {
+          scraper: new JobScraperService(),
+          screen: screenJobPostings,
+          verify: verifyRuleClaims,
           ai: aiService,
-          log: async (message) => {
-            job.logs.push(`[${new Date().toISOString()}] ${message}`);
-            job.progress = Math.min(95, job.progress + 3);
-            await jobQueueRepository.saveBackgroundJob(userId, job);
-          },
+          log,
         });
 
-        // Every analyzed job and every job that could not be analyzed is saved, so none silently disappears
-        for (const item of results) {
+        // Every kept job is saved (analyzed or not), in ranking order
+        const rankedJobIds: string[] = [];
+        const toTailor: string[] = [];
+        for (const item of items) {
           const now = new Date().toISOString();
-          const saved = { ...item.job, id: `job_${randomUUID()}`, userId, createdAt: now, updatedAt: now };
+          const saved = {
+            ...item.job,
+            searchMeta: { ...item.job.searchMeta, searchRunId: job.id },
+            id: `job_${randomUUID()}`,
+            userId,
+            createdAt: now,
+            updatedAt: now,
+          };
           await jobRepository.saveJob(userId, saved);
+          rankedJobIds.push(saved.id);
           if (item.analysis) {
-            await analysisRepository.saveAnalysis(userId, {
-              ...item.analysis,
-              id: `fit_${randomUUID()}`,
-              userId,
-              jobId: saved.id,
-              createdAt: now,
-            });
+            const analysis = { ...item.analysis, id: `fit_${randomUUID()}`, userId, jobId: saved.id, createdAt: now };
+            await analysisRepository.saveAnalysis(userId, analysis);
+            if (recommend(analysis).verdict === 'Sim') toTailor.push(saved.id);
           }
         }
 
-        const notAnalyzed = results.filter((r) => !r.analysis).length;
+        // Tailored ATS CV for the recommended jobs
+        let cvsGenerated = 0;
+        if (plan.autoTailorCv && toTailor.length) {
+          const batch = toTailor.slice(0, PLAN_LIMITS.maxAutoCv);
+          await log(`Gerando CV ATS para ${batch.length} vagas recomendadas.`);
+          for (const jobId of batch) {
+            try {
+              await tailoringService.generateTailoredCV(userId, jobId, 'balanced');
+              cvsGenerated++;
+            } catch (e: any) {
+              await log(`Não foi possível gerar o CV de uma vaga: ${e.message}`);
+            }
+          }
+        }
+
         job.status = 'completed';
         job.progress = 100;
         job.finishedAt = new Date().toISOString();
-        job.result = { ...stats, saved: results.length, notAnalyzedSaved: notAnalyzed, status: notAnalyzed ? 'partial' : 'success' };
+        job.result = {
+          prompt: job.payload?.prompt || null,
+          plan,
+          stats: { ...stats, saved: items.length, cvsGenerated },
+          rankedJobIds,
+          discarded,
+          alreadySavedJobIds,
+        };
         job.logs.push(
-          `[${new Date().toISOString()}] Busca concluída: ${stats.found} encontradas, ${stats.duplicates} repetidas, ${stats.outsideSeniority} fora do nível, ${stats.belowShortlist} abaixo do pré-ranking, ${stats.analyzed} analisadas, ${notAnalyzed} salvas sem análise.`
+          `[${new Date().toISOString()}] Busca concluída: ${stats.searches} buscas, ${stats.cardsFound} resultados, ${stats.uniqueCards} únicos, ${stats.opened} abertas, ${stats.passed} passaram nos filtros, ${stats.analyzed} analisadas, ${cvsGenerated} CVs gerados.`
         );
         await jobQueueRepository.saveBackgroundJob(userId, job);
       } else {
@@ -236,7 +268,10 @@ export class BackgroundWorker {
       job.logs.push(`[${new Date().toISOString()}] ERROR: ${err.message || 'Execution error'}`);
 
       // Configuration errors (missing key, unknown model) won't fix themselves on retry
-      const permanent = err instanceof AIError && (err.code === 'AI_NOT_CONFIGURED' || err.code === 'AI_MODEL_NOT_FOUND');
+      // A search is not retried automatically: each attempt repeats dozens of LinkedIn requests
+      const permanent =
+        job.jobType === 'job_search_agent' ||
+        (err instanceof AIError && (err.code === 'AI_NOT_CONFIGURED' || err.code === 'AI_MODEL_NOT_FOUND'));
 
       if (!permanent && job.retryCount < MAX_RETRIES) {
         job.status = 'queued';

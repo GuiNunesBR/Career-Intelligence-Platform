@@ -11,6 +11,7 @@ export class SqliteJobRepository implements IJobRepository {
       ...j,
       requirements: j.requirements as any, // Will fix JSONB mapping in next step
       url: j.url || undefined,
+      searchMeta: j.searchMeta ?? undefined,
       createdAt: j.createdAt,
       updatedAt: j.updatedAt,
     }));
@@ -23,6 +24,7 @@ export class SqliteJobRepository implements IJobRepository {
     return {
       ...j,
       url: j.url || undefined,
+      searchMeta: j.searchMeta ?? undefined,
       requirements: j.requirements as any,
       createdAt: j.createdAt,
       updatedAt: j.updatedAt,
@@ -42,12 +44,14 @@ export class SqliteJobRepository implements IJobRepository {
         requirements: job.requirements,
         rawText: job.rawText,
         url: job.url,
+        searchMeta: job.searchMeta ?? null,
         updatedAt: new Date().toISOString(),
       }).where(and(eq(jobs.userId, userId), eq(jobs.id, job.id))).returning();
       
       return {
         ...updated,
         url: updated.url || undefined,
+        searchMeta: updated.searchMeta ?? undefined,
         requirements: updated.requirements as any,
         createdAt: updated.createdAt,
         updatedAt: updated.updatedAt,
@@ -65,11 +69,13 @@ export class SqliteJobRepository implements IJobRepository {
         requirements: job.requirements,
         rawText: job.rawText,
         url: job.url,
+        searchMeta: job.searchMeta ?? null,
       }).returning();
       
       return {
         ...inserted,
         url: inserted.url || undefined,
+        searchMeta: inserted.searchMeta ?? undefined,
         requirements: inserted.requirements as any,
         createdAt: inserted.createdAt,
         updatedAt: inserted.updatedAt,

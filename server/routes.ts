@@ -25,6 +25,8 @@ import {
   EvidenceCreateSchema,
   JobParseSchema,
   SearchAgentCreateSchema,
+  SearchPromptSchema,
+  SearchRunSchema,
   JobCreateSchema,
   FitAnalysisRequestSchema,
   TailorCVRequestSchema,
@@ -44,6 +46,10 @@ export const apiRouter = express.Router();
 
 import { extractResumeText } from './services/pdf-extract.service.js';
 import { buildCvHtml, renderPdf, atsCheck } from './services/cv-render.service.js';
+import { planSearchFromPrompt } from './ai-search.js';
+import { planFromDraft, sanitizePlan } from './services/job-search.service.js';
+import { jobRepository, analysisRepository, tailoringRepository, careerLakeRepository } from './container.js';
+import { randomUUID } from 'crypto';
 
 apiRouter.post('/auth/login', authRateLimiter, validateBody(LoginSchema), async (req, res) => {
   try {
@@ -679,18 +685,114 @@ apiRouter.get('/search-agents', authMiddleware, async (req: AuthenticatedRequest
   }
 });
 
-apiRouter.post('/search-agents', authMiddleware, aiRateLimiter, validateBody(SearchAgentCreateSchema), async (req: AuthenticatedRequest, res, next) => {
+apiRouter.post('/search-agents', authMiddleware, validateBody(SearchAgentCreateSchema), async (req: AuthenticatedRequest, res, next) => {
   try {
-    const agent = await searchAgentRepository.create(req.user!.id, req.body);
-    // If there's already an active search loop, it will pick this up on its next cycle.
-    // Or we could trigger it immediately!
-    queueService.enqueueJob(req.user!.id, 'job_search_agent', {
-      roles: agent.roles.join(', '),
-      location: agent.location,
-      mode: agent.mode,
-      seniority: agent.seniority.join(', ')
-    }).catch(e => console.error("Agent init failed", e));
+    const agent = await searchAgentRepository.create(req.user!.id, {
+      name: req.body.name,
+      prompt: req.body.prompt,
+      plan: sanitizePlan(req.body.plan),
+      frequency: req.body.frequency,
+    });
     res.json({ agent });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// ==========================================
+// 8. PROMPT-DRIVEN JOB SEARCH
+// ==========================================
+
+// Plain-language request → editable search plan
+apiRouter.post('/job-search/plan', authMiddleware, aiRateLimiter, validateBody(SearchPromptSchema), async (req: AuthenticatedRequest, res, next) => {
+  try {
+    const lake = await careerLakeRepository.getUserLake(req.user!.id);
+    const draft = await planSearchFromPrompt(req.body.prompt, lake);
+    res.json(planFromDraft(draft));
+  } catch (err) {
+    next(err);
+  }
+});
+
+apiRouter.post('/job-search/run', authMiddleware, aiRateLimiter, validateBody(SearchRunSchema), async (req: AuthenticatedRequest, res, next) => {
+  try {
+    const running = (await queueService.getJobs(req.user!.id)).find(
+      (j) => j.jobType === 'job_search_agent' && (j.status === 'queued' || j.status === 'running')
+    );
+    if (running) {
+      return res.status(409).json({ error: { code: 'SEARCH_RUNNING', message: 'Já existe uma busca em andamento. Aguarde ela terminar.' } });
+    }
+    const plan = sanitizePlan(req.body.plan);
+    const backgroundJob = await queueService.enqueueJob(
+      req.user!.id,
+      'job_search_agent',
+      { plan, prompt: req.body.prompt || null },
+      undefined,
+      `search_${randomUUID()}`
+    );
+    res.status(202).json({ backgroundJob });
+  } catch (err) {
+    next(err);
+  }
+});
+
+apiRouter.get('/job-search/runs', authMiddleware, async (req: AuthenticatedRequest, res, next) => {
+  try {
+    const runs = (await queueService.getJobs(req.user!.id))
+      .filter((j) => j.jobType === 'job_search_agent')
+      .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+      .slice(0, 30)
+      .map((j) => ({
+        id: j.id,
+        status: j.status,
+        progress: j.progress,
+        createdAt: j.createdAt,
+        finishedAt: j.finishedAt,
+        prompt: j.payload?.prompt || null,
+        terms: j.payload?.plan?.terms || String(j.payload?.roles || '').split(',').filter(Boolean),
+        stats: j.result?.stats || null,
+      }));
+    res.json({ runs });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// One run with its ranked jobs, analyses, CV availability and the discarded list
+apiRouter.get('/job-search/runs/:id', authMiddleware, async (req: AuthenticatedRequest, res, next) => {
+  try {
+    const userId = req.user!.id;
+    const run = await queueService.getJobById(userId, req.params.id);
+    if (!run || run.jobType !== 'job_search_agent') {
+      return res.status(404).json({ error: { code: 'NOT_FOUND', message: 'Busca não encontrada.' } });
+    }
+    const load = async (jobId: string) => {
+      const job = await jobRepository.getJobById(userId, jobId);
+      if (!job) return null;
+      const [analysis, cv] = await Promise.all([
+        analysisRepository.getAnalysisForJob(userId, jobId),
+        tailoringRepository.getTailoredCVForJob(userId, jobId),
+      ]);
+      return { job, analysis, hasCv: !!cv };
+    };
+    const items = (await Promise.all((run.result?.rankedJobIds || []).map(load))).filter(Boolean);
+    const alreadySaved = (await Promise.all((run.result?.alreadySavedJobIds || []).map(load))).filter(Boolean);
+    res.json({
+      run: {
+        id: run.id,
+        status: run.status,
+        progress: run.progress,
+        createdAt: run.createdAt,
+        finishedAt: run.finishedAt,
+        logs: run.logs.slice(-40),
+        prompt: run.result?.prompt ?? run.payload?.prompt ?? null,
+        plan: run.result?.plan ?? run.payload?.plan ?? null,
+        stats: run.result?.stats ?? null,
+        discarded: run.result?.discarded ?? [],
+      },
+      items,
+      alreadySaved,
+    });
   } catch (err) {
     next(err);
   }
