@@ -1,18 +1,25 @@
-import { runAuthTests } from './auth.test.js';
-import { runOwnershipTests } from './ownership.test.js';
-import { runAIValidationTests } from './ai_validation.test.js';
-import { runQueueTests } from './queue.test.js';
-import { runAutomationTests } from './automation.test.js';
-import { runIntegrationIsolationTest } from './integration_isolation.test.js';
-import { runDatabasePhase2Tests } from './database_phase2.test.js';
-import { runApiIntegrationTests } from './api_integration.test.js';
+import fs from 'fs';
+
+// Suites wipe tables, so they run on their own database file, recreated on every run.
+// Set before any suite is imported: the db module opens the file at import time.
+const TEST_DB_FILE = './sqlite.test.db';
+process.env.NODE_ENV = 'test';
+process.env.SQLITE_FILE = TEST_DB_FILE;
+for (const suffix of ['', '-journal', '-wal', '-shm']) fs.rmSync(TEST_DB_FILE + suffix, { force: true });
+
+const { runAuthTests } = await import('./auth.test.js');
+const { runOwnershipTests } = await import('./ownership.test.js');
+const { runAIValidationTests } = await import('./ai_validation.test.js');
+const { runQueueTests } = await import('./queue.test.js');
+const { runAutomationTests } = await import('./automation.test.js');
+const { runIntegrationIsolationTest } = await import('./integration_isolation.test.js');
+const { runDatabasePhase2Tests } = await import('./database_phase2.test.js');
+const { runApiIntegrationTests } = await import('./api_integration.test.js');
 
 async function main() {
   console.log('====================================================');
   console.log('  CAREER LAKE V2.1 HARDENING — VERIFICATION RUNNER  ');
   console.log('====================================================\n');
-  
-  process.env.NODE_ENV = 'test';
 
   const start = Date.now();
   let passed = 0;

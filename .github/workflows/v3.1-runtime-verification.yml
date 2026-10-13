@@ -27,7 +27,7 @@ jobs:
       - name: Validate TypeScript Compilation
         run: npx tsc --noEmit --pretty false
 
-      # SQLite schema is created on boot (server/db/sqlite-schema.ts); tests use a fresh ./sqlite.db
+      # SQLite schema is created on boot (server/db/sqlite-schema.ts); tests use ./sqlite.test.db (see tests/runner.ts)
       - name: Run Tests (Auth, Ownership, AI grounding, API integration)
         run: npm run test
 

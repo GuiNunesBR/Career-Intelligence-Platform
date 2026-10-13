@@ -3,10 +3,14 @@ import { createClient } from '@libsql/client';
 import * as schema from './schema.js';
 import { SQLITE_SCHEMA } from './sqlite-schema.js';
 
-// Setup SQLite connection using libsql
-const client = createClient({
-  url: 'file:./sqlite.db',
-});
+// SQLITE_FILE lets tests (and scripts) use their own database file
+const DEFAULT_DB_FILE = './sqlite.db';
+const dbFile = process.env.SQLITE_FILE || DEFAULT_DB_FILE;
+if (process.env.NODE_ENV === 'test' && dbFile === DEFAULT_DB_FILE) {
+  // Test suites wipe tables: never let them touch the app's database
+  throw new Error('Tests must set SQLITE_FILE to a throwaway database (refusing to open ./sqlite.db).');
+}
+const client = createClient({ url: `file:${dbFile}` });
 
 // sqlite.db is not versioned: create tables on boot if they don't exist yet
 await client.executeMultiple(SQLITE_SCHEMA);
