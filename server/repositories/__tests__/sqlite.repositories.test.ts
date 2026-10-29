@@ -43,8 +43,16 @@ function readMigrationStatements(): string[] {
   const raw = fs.readFileSync(MIGRATION_FILE, 'utf-8');
   return raw
     .split('--> statement-breakpoint')
-    .map((s: string) => s.trim())
-    .filter((s: string) => s.length > 0 && !s.startsWith('--'));
+    // Drop leading comment-only lines within each block (e.g. the explanatory
+    // header above a CREATE TRIGGER) so the real DDL is not discarded.
+    .map((s: string) =>
+      s
+        .split('\n')
+        .filter((line: string) => !line.trim().startsWith('--'))
+        .join('\n')
+        .trim()
+    )
+    .filter((s: string) => s.length > 0);
 }
 
 beforeAll(async () => {

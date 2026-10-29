@@ -31,7 +31,15 @@ async function runMigrations() {
   // Split on them and execute each statement individually.
   const statements = raw
     .split('--> statement-breakpoint')
-    .map((s: string) => s.trim())
+    // Drop leading comment-only lines within each block (e.g. the explanatory
+    // header above a CREATE TRIGGER) so the real DDL is not discarded.
+    .map((s: string) =>
+      s
+        .split('\n')
+        .filter((line: string) => !line.trim().startsWith('--'))
+        .join('\n')
+        .trim()
+    )
     .filter((s: string) => s.length > 0);
 
   const url = process.env.SQLITE_URL || 'file:./sqlite.db';
