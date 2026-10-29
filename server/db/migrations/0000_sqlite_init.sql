@@ -249,9 +249,12 @@ CREATE TABLE IF NOT EXISTS "search_agents" (
 --> statement-breakpoint
 -- Triggers emulate "ON DELETE SET NULL (single column)" for composite FKs.
 -- SQLite's native SET NULL would null the whole composite key (including the
--- NOT NULL user_id), so we null only the linking column after a parent delete.
+-- NOT NULL user_id), so we null only the linking column. BEFORE DELETE (not
+-- AFTER) is required: the child link must be cleared before SQLite runs the
+-- NO ACTION foreign-key check for the parent delete, otherwise the delete is
+-- rejected with SQLITE_CONSTRAINT_FOREIGNKEY.
 CREATE TRIGGER IF NOT EXISTS "projects_experience_set_null"
-AFTER DELETE ON "experiences"
+BEFORE DELETE ON "experiences"
 FOR EACH ROW
 BEGIN
 	UPDATE "projects" SET "experience_id" = NULL
@@ -259,7 +262,7 @@ BEGIN
 END;
 --> statement-breakpoint
 CREATE TRIGGER IF NOT EXISTS "evidences_experience_set_null"
-AFTER DELETE ON "experiences"
+BEFORE DELETE ON "experiences"
 FOR EACH ROW
 BEGIN
 	UPDATE "evidences" SET "experience_id" = NULL
@@ -267,7 +270,7 @@ BEGIN
 END;
 --> statement-breakpoint
 CREATE TRIGGER IF NOT EXISTS "evidences_project_set_null"
-AFTER DELETE ON "projects"
+BEFORE DELETE ON "projects"
 FOR EACH ROW
 BEGIN
 	UPDATE "evidences" SET "project_id" = NULL
@@ -275,7 +278,7 @@ BEGIN
 END;
 --> statement-breakpoint
 CREATE TRIGGER IF NOT EXISTS "background_jobs_automation_set_null"
-AFTER DELETE ON "user_automations"
+BEFORE DELETE ON "user_automations"
 FOR EACH ROW
 BEGIN
 	UPDATE "background_jobs" SET "automation_id" = NULL
