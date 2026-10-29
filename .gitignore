@@ -3,3 +3,9 @@ dist
 server.js
 .env
 .env.*
+# Throwaway SQLite databases created by tests / CI (not the committed sqlite.db)
+test-sqlite.db
+test-sqlite.db-*
+ci-sqlite.db
+ci-sqlite.db-*
+server/repositories/__tests__/test-repos-*.db*
