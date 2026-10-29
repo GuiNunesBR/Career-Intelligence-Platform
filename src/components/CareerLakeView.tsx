@@ -37,7 +37,6 @@ export const CareerLakeView: React.FC<CareerLakeViewProps> = ({
   
   onAddSkill,
   onAddEvidence,
-  onRunAudit,
   onUploadCV,
 }) => {
   const [activeTab, setActiveTab] = useState<'evidences' | 'experiences' | 'projects' | 'skills' | 'languages' | 'profile'>('profile');
@@ -566,9 +565,9 @@ export const CareerLakeView: React.FC<CareerLakeViewProps> = ({
                   <tr>
                     <td colSpan={5} className="py-8 px-4 text-center text-neutral-500">Nenhum idioma registrado.</td>
                   </tr>
-                ) : (lake?.profile?.languages || []).map((lang: string, idx: number) => (
+                ) : (lake?.profile?.languages || []).map((lang: { language: string; proficiency: string }, idx: number) => (
                   <tr key={idx} className="hover:bg-neutral-50 transition-colors">
-                    <td colSpan={4} className="py-3 px-4 font-semibold text-neutral-900">{lang}</td>
+                    <td colSpan={4} className="py-3 px-4 font-semibold text-neutral-900">{lang.language}{lang.proficiency ? ` — ${lang.proficiency}` : ''}</td>
                     <td className="py-3 px-4 text-right">
                       <div className="flex justify-end gap-2">
                         <button onClick={() => alert('Edição em desenvolvimento')} className="text-neutral-400 hover:text-blue-600 transition-colors">

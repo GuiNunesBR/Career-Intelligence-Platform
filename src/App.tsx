@@ -8,7 +8,6 @@ import {
   CoverLetter,
   Application,
   BackgroundJob,
-  UserAutomation,
   ApplicationStatus,
   TailoringMode,
 } from './shared/types.js';
@@ -146,7 +145,7 @@ export default function App() {
   const loadUserData = async (_userId: string) => {
     setIsSyncing(true);
     try {
-      const [lakeRes, jobsRes, appsRes, bgRes, autoRes] = await Promise.all([
+      const [lakeRes, jobsRes, appsRes, bgRes] = await Promise.all([
         api.getLake(),
         api.getJobs(),
         api.getApplications(),
@@ -373,7 +372,7 @@ export default function App() {
   };
 
   // Tailoring Actions
-  const handleGenerateCV = async (jobId: string, mode: TailoringMode, language?: string) => {
+  const handleGenerateCV = async (jobId: string, mode: TailoringMode, _language?: string) => {
     setIsGeneratingCV(true);
     try {
       const { cv } = await api.generateCV(jobId, mode);

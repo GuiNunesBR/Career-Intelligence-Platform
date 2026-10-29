@@ -64,8 +64,6 @@ export const FitAnalysisView: React.FC<FitAnalysisViewProps> = ({
     }
   };
 
-  const dims = analysis.dimensions;
-
   return (
     <div className="space-y-6">
       {/* Header & Job Meta */}

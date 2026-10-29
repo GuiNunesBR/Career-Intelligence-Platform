@@ -31,16 +31,13 @@ jobs:
       - name: Run SQLite Migration
         run: npm run db:migrate
 
-      - name: Validate TypeScript Compilation (report-only)
+      - name: Validate TypeScript Compilation
         run: |
-          # NOTE: There are known pre-existing type errors (mostly unused-var
-          # TS6133 plus a few in server/ai.ts). This step reports them without
-          # failing the gate so the DB/runtime verification below still runs.
-          # Tracked as a follow-up cleanup; flip `|| true` off once resolved.
           set -o pipefail
-          npx tsc --noEmit --pretty false 2>&1 | tee /tmp/tsc.log || true
-          echo "--- tsc output ---"
+          npx tsc --noEmit --pretty false 2>&1 | tee /tmp/tsc.log
+          status=${PIPESTATUS[0]}
           cat /tmp/tsc.log
+          exit $status
 
       - name: Run Repository Tests (Tenant Isolation & DB Constraints)
         run: npx vitest run server/repositories/__tests__/sqlite.repositories.test.ts

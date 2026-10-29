@@ -176,7 +176,7 @@ export class BackgroundWorker {
             await careerLakeRepository.addProject(userId, {
               name: proj.name || "Projeto",
               domain: proj.domain || "General",
-              role: proj.role || "Membro",
+              scope: proj.scope || proj.role || "Membro",
               description: proj.description || "",
               metrics: proj.metrics || "",
               technologies: proj.technologies || []
