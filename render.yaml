@@ -3,18 +3,21 @@ services:
     name: career-lake-api
     env: node
     buildCommand: npm install && npm run build
+    # `npm start` runs the idempotent SQLite migration first via the prestart
+    # hook (CREATE TABLE IF NOT EXISTS), initialising a fresh persistent disk
+    # on first deploy.
     startCommand: npm run start
+    # Persistent disk so the SQLite database survives redeploys/restarts.
+    # Render's service filesystem is otherwise ephemeral.
+    disk:
+      name: career-lake-data
+      mountPath: /data
+      sizeGB: 1
     envVars:
       - key: NODE_ENV
         value: production
-      - key: DATABASE_URL
-        fromDatabase:
-          name: career-lake-db
-          property: connectionString
+      # SQLite database lives on the persistent disk mounted at /data.
+      - key: SQLITE_URL
+        value: file:/data/sqlite.db
       - key: GEMINI_API_KEY
         sync: false
-
-databases:
-  - name: career-lake-db
-    databaseName: careerlake
-    user: career_user

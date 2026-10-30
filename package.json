@@ -4,9 +4,11 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
+    "predev": "npm run db:migrate",
     "dev": "vite --port=3000 --host=0.0.0.0",
     "build": "vite build && esbuild server.ts --bundle --platform=node --packages=external --format=esm --outfile=server.js",
     "preview": "vite preview",
+    "prestart": "npm run db:migrate",
     "start": "node server.js",
     "clean": "rm -rf dist server.js",
     "lint": "tsc --noEmit",
