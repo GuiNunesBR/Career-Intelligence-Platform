@@ -13,8 +13,6 @@ import {
 import { searchAgentRepository } from './repositories/sqlite.search_agent.repository.js';
 import { authMiddleware, AuthenticatedRequest } from './middleware/auth.middleware.js';
 import multer from 'multer';
-import { createRequire } from 'module';
-const require = createRequire(import.meta.url);
 import { validateBody } from './middleware/validation.middleware.js';
 import { authRateLimiter } from './middleware/security.middleware.js';
 import {

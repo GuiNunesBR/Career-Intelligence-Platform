@@ -28,9 +28,9 @@ function getAI() {
   return _ai;
 }
 
-async function withTimeout<T>(promise: Promise<T>, ms = 60000): Promise<T> {
+async function withTimeout<T = any>(promise: Promise<T>, ms = 60000): Promise<T> {
   let timer: any;
-  const timeoutPromise = new Promise<never>((_, reject) => {
+  const timeoutPromise = new Promise<T>((_, reject) => {
     timer = setTimeout(() => reject(new Error('AI generation timed out')), ms);
     if (timer && typeof timer.unref === 'function') timer.unref();
   });

@@ -93,7 +93,7 @@ export class SqliteAutomationRepository implements IAutomationRepository {
       .set({ automationId: null })
       .where(and(eq(backgroundJobs.userId, userId), eq(backgroundJobs.automationId, id)));
       
-    const result = await db.delete(userAutomations).where(and(eq(userAutomations.userId, userId), eq(userAutomations.id, id)));
+    await db.delete(userAutomations).where(and(eq(userAutomations.userId, userId), eq(userAutomations.id, id)));
     return true;
   }
 

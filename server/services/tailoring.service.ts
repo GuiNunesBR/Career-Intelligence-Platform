@@ -21,7 +21,7 @@ export class TailoringService {
     return this.tailoringRepo.getCoverLetterForJob(userId, jobId);
   }
 
-  async generateTailoredCV(userId: string, jobId: string, mode: TailoringMode, language?: string): Promise<TailoredCV> {
+  async generateTailoredCV(userId: string, jobId: string, mode: TailoringMode, _language?: string): Promise<TailoredCV> {
     if (!userId) throw new Error('User ID is required');
     const job = await this.jobRepo.getJobById(userId, jobId);
     if (!job) {

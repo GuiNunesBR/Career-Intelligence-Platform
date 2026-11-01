@@ -3,3 +3,16 @@ dist
 server.js
 .env
 .env.*
+
+# Local SQLite database (created by `npm run db:migrate`; not committed so
+# real user data never ships in the repo). In production it lives on a
+# persistent disk via SQLITE_URL.
+sqlite.db
+sqlite.db-*
+
+# Throwaway SQLite databases created by tests / CI
+test-sqlite.db
+test-sqlite.db-*
+ci-sqlite.db
+ci-sqlite.db-*
+server/repositories/__tests__/test-repos-*.db*
