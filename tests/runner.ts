@@ -5,6 +5,8 @@ import fs from 'fs';
 const TEST_DB_FILE = './sqlite.test.db';
 process.env.NODE_ENV = 'test';
 process.env.SQLITE_FILE = TEST_DB_FILE;
+// SQLITE_URL takes precedence over SQLITE_FILE (see server/db/url.ts): override any value from CI
+process.env.SQLITE_URL = `file:${TEST_DB_FILE}`;
 for (const suffix of ['', '-journal', '-wal', '-shm']) fs.rmSync(TEST_DB_FILE + suffix, { force: true });
 
 const { runAuthTests } = await import('./auth.test.js');

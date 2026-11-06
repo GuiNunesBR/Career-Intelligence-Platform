@@ -4,13 +4,21 @@ server.js
 .env
 .env.*
 
-# Local databases and user data (contain personal data and sessions)
+# Local databases and user data (contain personal data and sessions).
+# The SQLite database is created by `npm run db:migrate`; in production it
+# lives on a persistent disk via SQLITE_URL.
 *.db
 *.db-journal
 *.db-wal
 *.db-shm
+sqlite.db-*
 data/
 uploads/
+
+# Throwaway SQLite databases created by tests / CI
+test-sqlite.db-*
+ci-sqlite.db-*
+server/repositories/__tests__/test-repos-*.db*
 
 # Logs and tool artifacts
 *.log

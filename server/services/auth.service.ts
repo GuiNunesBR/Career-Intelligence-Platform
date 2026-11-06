@@ -1,6 +1,6 @@
 import bcrypt from 'bcryptjs';
 import { IUserRepository } from '../repositories/interfaces.js';
-import { sanitizeUser } from '../db.js';
+import { sanitizeUser } from '../utils/user.js';
 import { SanitizedUser, AuthSession } from '../../src/shared/types.js';
 
 const BCRYPT_COST = 12;
