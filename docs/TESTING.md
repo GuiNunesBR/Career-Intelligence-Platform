@@ -59,35 +59,33 @@ npx tsx tests/runner.ts
 ## CI Runtime Verification Gate
 
 The full verification pipeline runs in GitHub Actions via
-[`.github/workflows/v3.1-runtime-verification.yml`](../.github/workflows/v3.1-runtime-verification.yml)
-on every push and pull request against `main`. It provisions a PostgreSQL 16
-service container and executes the following gate in order:
+[`.github/workflows/ci.yml`](../.github/workflows/ci.yml) on every push and pull
+request against `main`. It uses a throwaway SQLite database
+(`SQLITE_URL=file:./ci-sqlite.db`) and runs these steps in order:
 
-1. **Install** — `npm ci` (Node.js 22).
-2. **Migrate** — `npm run db:migrate` (Drizzle migrations against the DB).
-3. **Type-check** — `npx tsc --noEmit` (TypeScript 7 native compiler).
-4. **Repository tests** — `vitest run server/repositories/__tests__/pg.repositories.test.ts`
-   (tenant isolation & DB constraints).
-5. **Integration tests** — `npm run test` (API + PgRepositories + Gate 0).
-6. **Production build** — `npm run build` and verification that `server.js` is emitted.
-7. **Runtime gate** — boots the server and asserts `GET /api/health` returns `{"status":"ok"}`.
+1. **Install:** `npm ci` (Node.js 22).
+2. **Migrate:** `npm run db:migrate`.
+3. **Type-check:** strict `tsc --noEmit`.
+4. **Repository tests:** `npx vitest run server/repositories/__tests__/sqlite.repositories.test.ts`
+   (tenant isolation and DB constraints).
+5. **Integration tests:** `npm test` (auth, ownership, AI grounding, API, job search).
+   The suite always uses its own `sqlite.test.db`.
+6. **Production build:** `npm run build`, then a check that `server.js` was emitted.
+7. **Runtime gate:** boots the server and asserts that `GET /api/health` returns
+   `{"status":"ok"}` and that the security headers are present.
 
 ### Reproducing the gate locally
 
-A networked environment (access to the npm registry) and a running PostgreSQL
-instance are required:
-
 ```bash
 npm ci
-export DATABASE_URL=postgresql://career_user:career_password@localhost:5432/career_lake_test
+export SQLITE_URL=file:./ci-sqlite.db
 npm run db:migrate
-npm run lint        # tsc --noEmit
-npm run test        # integration suite
-npm run build       # vite build + esbuild bundle -> server.js
-PORT=3000 npm start # then: curl http://localhost:3000/api/health
+npm run lint
+npx vitest run server/repositories/__tests__/sqlite.repositories.test.ts
+npm test
+npm run build
+PORT=3000 npm start   # then: curl http://localhost:3000/api/health
 ```
 
-> **Note:** Type-checking requires `node_modules` to be installed so that
-> dependency type definitions (`@types/node`, `@types/react`, `pg`, etc.) resolve.
-> Running `tsc` without an install reports spurious `TS2688 "Cannot find type
-> definition file"` errors that are unrelated to the source code.
+> **Note:** type-checking needs `node_modules` installed. Without it, `tsc`
+> reports spurious `TS2688 "Cannot find type definition file"` errors.
