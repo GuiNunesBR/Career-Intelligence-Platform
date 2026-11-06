@@ -36,7 +36,7 @@ async function main() {
     { name: '5. UserAutomations & Timezone Scheduling', fn: runAutomationTests },
     { name: '6. End-to-End Cross-User Isolation (User A vs User B)', fn: runIntegrationIsolationTest },
     { name: '7. Phase 2 Database Integration Tests', fn: runDatabasePhase2Tests },
-    { name: '8. HTTP API Integration (End-to-End routes with Postgres)', fn: runApiIntegrationTests },
+    { name: '8. HTTP API Integration (End-to-End routes with SQLite)', fn: runApiIntegrationTests },
     { name: '9. Prompt-driven Job Search', fn: runJobSearchTests },
   ];
 

@@ -9,7 +9,8 @@ process.env.SQLITE_URL = process.env.SQLITE_URL || 'file:./test-sqlite.db';
 export default defineConfig({
   test: {
     environment: 'node',
-    include: ['server/**/*.test.ts', 'tests/**/*.test.ts'],
+    // tests/**/*.test.ts belong to the tsx runner (npm test), not to Vitest.
+    include: ['server/**/*.test.ts'],
     // DB-backed repository tests mutate shared tables; run serially.
     fileParallelism: false,
     env: {
