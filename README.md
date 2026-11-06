@@ -1,195 +1,101 @@
-# Career Lake — Plataforma de Inteligência de Carreira
+# Career Lake: Career Intelligence Platform
 
-Sistema de gestão e análise de percurso profissional baseado em evidências. O histórico registado atua como fonte central de verdade, sendo as versões de currículo geradas como projeções para vagas específicas.
+Career Lake keeps your professional history as structured, evidence-backed records and treats it as the single source of truth. Every CV or cover letter it produces is a projection of that history onto a specific job posting, and it never adds a skill, metric or claim that your records can't back up.
 
----
-
-## Modelo de Funcionamento
-
-A aplicação não permite a introdução de competências ou métricas sem suporte factual. Os requisitos de cada oportunidade são comparados diretamente com o repositório estruturado do utilizador, gerando uma matriz de correspondência antes de qualquer documento ser elaborado.
+## How it works
 
 ```text
-               +--------------------------------------------------------+
-               |               Career Lake (Dados Reais)                |
-               |  - Experiências profissionais com contexto de negócio  |
-               |  - Projetos com tecnologias e entregas mensuráveis     |
-               |  - Competências categorizadas por tempo e nível        |
-               |  - Banco de evidências diretas e transferíveis         |
-               +---------------------------+----------------------------+
-                                           |
-                                           v
-      Requisitos da Vaga ---> [ Matriz de Evidências / Fit ] <--- Evidências
-                                           |
-                                           v
-       +----------------------------------------------------------------+
-       |                     Documentos Gerados                         |
-       |  - Currículo adaptado (Modos: Conservador, Equilibrado,        |
-       |    Agressivo)                                                  |
-       |  - Carta de apresentação fundamentada em factos documentados   |
-       |  - Relatório de proveniência com citações de evidências        |
-       +----------------------------------------------------------------+
-
+          +--------------------------------------------------------+
+          |                Career Lake (your real data)            |
+          |  - Experiences with business context                   |
+          |  - Projects with technologies and measurable outcomes  |
+          |  - Skills by time and level                            |
+          |  - Evidence bank (direct and transferable)             |
+          +---------------------------+----------------------------+
+                                      |
+                                      v
+   Job requirements ---> [ Evidence matrix / fit score ] <--- Evidence
+                                      |
+                                      v
+          +--------------------------------------------------------+
+          |                    Generated documents                 |
+          |  - Tailored ATS CV (PDF), three writing modes          |
+          |  - Cover letter grounded in documented facts           |
+          |  - Provenance report citing the evidence used          |
+          +--------------------------------------------------------+
 ```
 
----
+## Features
 
-## Funcionalidades
+- **Career Lake:** experiences, projects, skills and an evidence catalogue with metrics and stated confidence. Import from an existing CV (PDF), with layout-aware reading.
+- **LinkedIn job search:** describe what you want in plain language. The app turns it into an editable search plan, runs it in stages and scores each job against your evidence.
+- **Fit analysis:** requirements are extracted and ranked, then matched to your evidence as direct, derived, transferable or missing. The fit score is deterministic.
+- **CV and cover letter generation:** conservative, balanced or aggressive wording. Every statement stays traceable to an evidence ID, and AI output that cites unknown records is discarded. CVs export as ATS-friendly PDFs.
+- **Applications:** Kanban board and list of applications by stage, with notes and salary expectations.
+- **Background jobs and automations:** async queue with retries and idempotency keys, plus recurring schedules with time zones.
+- **Security:** bcrypt password hashing, random session tokens stored only as hashes with expiry, rate limiting, CSP and other security headers, strict per-user data isolation.
 
-* **Repositório Estruturado (Career Lake):** Registo de experiências, projetos, competências funcionais/técnicas e catálogo de evidências com métricas e graus de confiança declarados.
+## Tech stack
 
-
-* **Processamento de Vagas e Matriz de Evidências:** Extração de requisitos e classificação por criticidade. Cruzamento de cada requisito com as evidências do perfil, identificando correspondências diretas, derivadas, transferíveis ou ausência de dados.
-
-
-* **Geração de Currículos e Cartas:** Criação de documentos direcionados sob três modos de formulação textual, mantendo a rastreabilidade das afirmações através de identificadores de evidências.
-
-
-* **Gestão de Candidaturas:** Acompanhamento do ciclo de processos seletivos por etapas (quadro Kanban e vista em lista), com anotações e registo de expetativas salariais.
-
-
-* **Tarefas em Segundo Plano e Agendamento:** Fila de execução assíncrona com estados (`queued`, `running`, `completed`, `failed`, `cancelled`), gestão de tentativas, chaves de idempotência e agendamento recorrente com fuso horário.
-
-
-* **Isolamento de Utilizadores:** Separação física de ficheiros por utilizador, armazenamento de palavras-passe através de dispersão com bcrypt e validação de sessões via hash SHA-256.
-
-
-
----
-
-## Pilha Tecnológica
-
-| Componente | Tecnologias |
+| Area | Technologies |
 | --- | --- |
-| **Interface** | React 19, TypeScript, Vite, Tailwind CSS v4, Lucide React, Motion
+| Front end | React 19, TypeScript, Vite, Tailwind CSS v4, Lucide, Motion |
+| Back end | Node.js, Express, TypeScript |
+| Data | SQLite / libSQL with Drizzle ORM |
+| AI | Google Gemini (`@google/genai`), with a fallback model |
+| Validation | Zod |
+| PDF | pdf-parse (CV import), Puppeteer (CV export) |
 
- |
-| **Servidor** | Node.js, Express, TypeScript via `tsx`<br> |
-| **Validação** | Zod
+## Getting started
 
- |
-| **Modelos de IA** | SDK Google GenAI (`@google/genai`)
+Requirements: Node.js 20 or later, and a [Google Gemini API key](https://aistudio.google.com/apikey).
 
- |
-| **Segurança** | Bcryptjs, SHA-256 para sessões, cabeçalhos de segurança HTTP, limitador de taxa
+```bash
+git clone https://github.com/GuiNunesBR/Career-Intelligence-Platform.git
+cd Career-Intelligence-Platform
+npm install
+cp .env.example .env   # then set GEMINI_API_KEY
+npm run dev            # runs DB migrations, then serves on http://localhost:3000
+```
 
- |
-| **Armazenamento** | Ficheiros JSON particionados por diretoria de utilizador (`data/user_${userId}/`)
+`.env.example` lists every setting. Only `GEMINI_API_KEY` is required. By default the database is `./sqlite.db`; change it with `SQLITE_URL` or `SQLITE_FILE`.
 
- |
+## Scripts
 
----
+| Command | What it does |
+| --- | --- |
+| `npm run dev` | Development server (Vite + Express) on port 3000 |
+| `npm test` | Test suite, on its own `sqlite.test.db` |
+| `npm run lint` | Strict TypeScript check |
+| `npm run build` | Builds the front end to `dist/` and the server to `server.js` |
+| `npm start` | Runs migrations, then the production server |
+| `npm run db:migrate` | Creates or upgrades the database schema |
+| `npx tsx scripts/list-models.ts` | Lists the Gemini models your key can use |
+| `npx tsx scripts/revoke-all-sessions.ts` | Signs every user out |
 
-## Estrutura do Diretório
+## Deployment
+
+`render.yaml` deploys to [Render](https://render.com) as a single web service, with SQLite on a persistent disk (`SQLITE_URL=file:/data/sqlite.db`). Set `GEMINI_API_KEY` in the Render dashboard.
+
+## Project layout
 
 ```text
-career-lake/
-├── data/                                 # Dados persistidos em disco[cite: 1, 2]
-│   ├── users.json                        # Utilizadores registados e hashes de palavra-passe[cite: 1, 2]
-│   └── user_<userId>/                    # Diretoria dedicada por conta[cite: 1, 2]
-│       ├── lake.json                     # Histórico profissional e evidências[cite: 1, 2]
-│       ├── jobs.json                     # Vagas guardadas[cite: 1, 2]
-│       ├── analyses.json                 # Análises de aderência e matrizes[cite: 1, 2]
-│       ├── cvs.json                      # Versões de currículos geradas[cite: 1, 2]
-│       ├── cover_letters.json            # Cartas de apresentação geradas[cite: 1, 2]
-│       ├── applications.json             # Histórico de candidaturas[cite: 1, 2]
-│       ├── automations.json              # Configuração de agendamentos[cite: 1, 2]
-│       └── background_jobs.json          # Registo e registos de execução de tarefas[cite: 1, 2]
-├── docs/                                 # Documentação de arquitetura[cite: 1, 2]
-├── server/                               # Servidor e lógica de negócio[cite: 1, 2]
-│   ├── middleware/                       # Autenticação, limitação de taxa e cabeçalhos[cite: 1, 2]
-│   ├── repositories/                     # Camada de abstração de acesso a dados[cite: 1, 2]
-│   ├── scheduler/                        # Verificação de agendamentos temporais[cite: 1, 2]
-│   ├── services/                         # Regras de negócio e validação de propriedade[cite: 1, 2]
-│   ├── validation/                       # Esquemas Zod[cite: 1, 2]
-│   ├── ai.ts                             # Chamadas à API Gemini[cite: 1, 2]
-│   ├── app.ts                            # Inicialização da aplicação Express[cite: 1, 2]
-│   ├── db.ts                             # Gestão de ficheiros e sessões em memória[cite: 1, 2]
-│   ├── routes.ts                         # Definição das rotas REST[cite: 1, 2]
-│   └── worker.ts                         # Processamento de tarefas assíncronas[cite: 1, 2]
-├── src/                                  # Código-fonte do cliente[cite: 1, 2]
-│   ├── components/                       # Painéis e formulários da aplicação[cite: 1, 2]
-│   ├── lib/                              # Cliente HTTP e controlo de sessão local[cite: 1, 2]
-│   ├── shared/                           # Definições de tipos comuns[cite: 1, 2]
-│   ├── App.tsx                           # Gestão de estado principal e navegação[cite: 1, 2]
-│   └── main.tsx                          # Arranque do cliente React[cite: 1, 2]
-├── server.ts                             # Ponto de entrada de produção[cite: 1, 2]
-├── package.json                          # Scripts e dependências[cite: 1, 2]
-└── vite.config.ts                        # Configuração do empacotador Vite[cite: 1, 2]
-
+server/          Express app, routes, services, repositories, worker, scheduler
+server/db/       SQLite schema, migrations and connection
+src/             React client
+tests/           Integration and unit tests (npm test)
+docs/            Architecture, auth, security, AI validation and testing notes
+scripts/         Maintenance scripts
 ```
 
----
+See [docs/](docs/) for the architecture and security details.
 
-## Execução
+## Grounding rules
 
-### Requisitos Prévios
+1. **No cross-domain inflation.** Generic management or process skills don't satisfy domain-specific requirements, such as pharma or heavy industry. The app reports these as transferable or missing.
+2. **ID validation.** Every `experienceId`, `projectId` or `evidenceId` the model returns is checked against the signed-in user's records, and anything unmatched is dropped before it is saved.
+3. **Auditability.** Each generated bullet and paragraph records the evidence or metric it came from.
 
-* Node.js versão 20 ou superior.
+## License
 
-
-* Chave de API Google Gemini.
-
-
-
-### 1. Instalação de Dependências
-
-```bash
-git clone <url-do-repositorio>
-cd career-lake
-npm install
-
-```
-
-### 2. Variáveis de Ambiente
-
-Criar um ficheiro `.env` na raiz:
-
-```env
-PORT=3000
-GEMINI_API_KEY=sua_chave_aqui
-
-```
-
-### 3. Modo de Desenvolvimento
-
-Inicia o cliente Vite e o servidor Express integrado:
-
-```bash
-npm run dev
-
-```
-
-Aceder através de `http://localhost:3000`.
-
-### 4. Execução de Testes
-
-```bash
-npm test
-
-```
-
-### 5. Compilação e Produção
-
-```bash
-# Verificação de tipos
-npm run lint
-
-# Compilação dos ficheiros de frontend
-npm run build
-
-# Arranque do servidor compilado
-npm start
-
-```
-
----
-
-## Regras de Validação e Grounding
-
-1. **Separação de Domínio Técnico:** A posse de competências de gestão ou processos genéricos não valida requisitos específicos de áreas como farmacêutica ou indústria pesada. Nesses casos, o sistema sinaliza transferência funcional ou ausência de histórico direto.
-
-
-2. **Validação de Identificadores:** Identificadores retornados pelos modelos de linguagem (`experienceId`, `projectId`, `evidenceId`) são filtrados face aos registos associados ao identificador do utilizador autenticado. Dados sem correspondência são descartados antes da escrita em disco.
-
-
-3. **Auditabilidade de Conteúdo:** Parágrafos e pontos de currículo gerados mantêm registo interno do documento ou métrica de origem introduzida no Career Lake.
+[MIT](LICENSE) © 2026 Guilherme Nunes

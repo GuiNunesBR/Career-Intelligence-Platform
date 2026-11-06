@@ -4,7 +4,7 @@ import * as dotenv from 'dotenv';
 dotenv.config();
 
 // Primary model + a real second model used when the primary is overloaded, rate limited or gone.
-// Run `npx tsx list_models.ts` to see which models the API key can use.
+// Run `npx tsx scripts/list-models.ts` to see which models the API key can use.
 const PRIMARY_MODEL = process.env.GEMINI_MODEL || 'gemini-3.8-flash';
 const FALLBACK_MODEL = process.env.GEMINI_FALLBACK_MODEL || 'gemini-3.5-flash-lite';
 const MAX_ATTEMPTS_PER_MODEL = 3;

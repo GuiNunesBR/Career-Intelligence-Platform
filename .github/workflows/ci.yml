@@ -1,4 +1,4 @@
-name: V3.1 Runtime Verification
+name: CI
 
 on:
   push:

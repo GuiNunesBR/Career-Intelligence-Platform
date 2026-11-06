@@ -23,3 +23,9 @@ server/repositories/__tests__/test-repos-*.db*
 # Logs and tool artifacts
 *.log
 .antigravity/
+
+# Keep the example env file
+!.env.example
+
+# Local CI logs
+ci_logs/

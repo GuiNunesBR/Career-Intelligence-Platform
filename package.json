@@ -1,7 +1,21 @@
 {
-  "name": "react-example",
+  "name": "career-lake",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
+  "description": "Evidence-grounded CV builder and LinkedIn job search powered by Google Gemini",
+  "license": "MIT",
+  "author": "Guilherme Nunes",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/GuiNunesBR/Career-Intelligence-Platform.git"
+  },
+  "homepage": "https://github.com/GuiNunesBR/Career-Intelligence-Platform#readme",
+  "bugs": {
+    "url": "https://github.com/GuiNunesBR/Career-Intelligence-Platform/issues"
+  },
+  "engines": {
+    "node": ">=20"
+  },
   "type": "module",
   "scripts": {
     "predev": "npm run db:migrate",
@@ -10,7 +24,7 @@
     "preview": "vite preview",
     "prestart": "npm run db:migrate",
     "start": "node server.js",
-    "clean": "rm -rf dist server.js",
+    "clean": "node -e \"for (const f of ['dist','server.js']) require('fs').rmSync(f,{recursive:true,force:true})\"",
     "lint": "tsc --noEmit",
     "test": "tsx tests/runner.ts",
     "db:migrate": "tsx server/db/migrate.ts"
@@ -19,9 +33,6 @@
     "@google/genai": "^2.4.0",
     "@libsql/client": "^0.14.0",
     "@tailwindcss/vite": "^4.3.3",
-    "@types/multer": "^2.3.0",
-    "@types/pdf-parse": "^1.1.1",
-    "@vitejs/plugin-react": "^6.1.1",
     "bcryptjs": "^3.0.3",
     "cheerio": "^1.2.0",
     "dotenv": "^17.2.3",
@@ -31,7 +42,6 @@
     "motion": "^12.23.24",
     "multer": "^2.4.0",
     "pdf-parse": "^1.1.1",
-    "pg": "^8.23.1",
     "react": "^19.0.1",
     "react-dom": "^19.0.1",
     "vite": "^8.3.0",
@@ -40,10 +50,12 @@
   "devDependencies": {
     "@types/bcryptjs": "^3.0.0",
     "@types/express": "^4.17.21",
+    "@types/multer": "^2.3.0",
     "@types/node": "^22.14.0",
-    "@types/pg": "^8.23.1",
+    "@types/pdf-parse": "^1.1.1",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
+    "@vitejs/plugin-react": "^6.1.1",
     "autoprefixer": "^10.4.21",
     "drizzle-kit": "^0.31.11",
     "esbuild": "^0.28.2",
