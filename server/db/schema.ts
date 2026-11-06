@@ -2,6 +2,7 @@ import {
   sqliteTable, text, uniqueIndex, foreignKey, unique, integer
 } from 'drizzle-orm/sqlite-core';
 import { sql } from 'drizzle-orm';
+import type { JobRequirement } from '../../src/shared/types.js';
 
 export const users = sqliteTable('users', {
   id: text('id').primaryKey(),
@@ -145,7 +146,7 @@ export const jobs = sqliteTable('jobs', {
   seniority: text('seniority').notNull(),
   employmentType: text('employment_type').notNull(),
   description: text('description').notNull(),
-  requirements: text('requirements', { mode: 'json' }).notNull().$type<any>(),
+  requirements: text('requirements', { mode: 'json' }).notNull().$type<JobRequirement[]>(),
   rawText: text('raw_text').notNull(),
   url: text('url'),
   searchMeta: text('search_meta', { mode: 'json' }).$type<any>(),

@@ -9,7 +9,7 @@ export class SqliteJobRepository implements IJobRepository {
     const result = await db.select().from(jobs).where(eq(jobs.userId, userId));
     return result.map(j => ({
       ...j,
-      requirements: j.requirements as any, // Will fix JSONB mapping in next step
+      requirements: j.requirements,
       url: j.url || undefined,
       searchMeta: j.searchMeta ?? undefined,
       createdAt: j.createdAt,
@@ -25,7 +25,7 @@ export class SqliteJobRepository implements IJobRepository {
       ...j,
       url: j.url || undefined,
       searchMeta: j.searchMeta ?? undefined,
-      requirements: j.requirements as any,
+      requirements: j.requirements,
       createdAt: j.createdAt,
       updatedAt: j.updatedAt,
     };
@@ -52,7 +52,7 @@ export class SqliteJobRepository implements IJobRepository {
         ...updated,
         url: updated.url || undefined,
         searchMeta: updated.searchMeta ?? undefined,
-        requirements: updated.requirements as any,
+        requirements: updated.requirements,
         createdAt: updated.createdAt,
         updatedAt: updated.updatedAt,
       };
@@ -76,7 +76,7 @@ export class SqliteJobRepository implements IJobRepository {
         ...inserted,
         url: inserted.url || undefined,
         searchMeta: inserted.searchMeta ?? undefined,
-        requirements: inserted.requirements as any,
+        requirements: inserted.requirements,
         createdAt: inserted.createdAt,
         updatedAt: inserted.updatedAt,
       };
