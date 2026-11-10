@@ -28,6 +28,11 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      # The ATS CV export test renders a real PDF. Install Puppeteer's Chrome explicitly
+      # instead of relying on the package's install script.
+      - name: Install Chrome for Puppeteer
+        run: npx puppeteer browsers install chrome
+
       - name: Run SQLite Migration
         run: npm run db:migrate
 
@@ -43,7 +48,7 @@ jobs:
         run: npx vitest run server/repositories/__tests__/sqlite.repositories.test.ts
 
       # tests/runner.ts points the suites at their own throwaway ./sqlite.test.db
-      - name: Run Tests (Auth, Ownership, AI grounding, API integration, Job search)
+      - name: Run Tests (Auth, Ownership, AI grounding, API integration, Job search, PDF export)
         run: npm run test
 
       - name: Validate Production Build

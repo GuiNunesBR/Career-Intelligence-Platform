@@ -18,6 +18,7 @@ const { runIntegrationIsolationTest } = await import('./integration_isolation.te
 const { runDatabasePhase2Tests } = await import('./database_phase2.test.js');
 const { runApiIntegrationTests } = await import('./api_integration.test.js');
 const { runJobSearchTests } = await import('./job_search.test.js');
+const { runCvPdfTests } = await import('./cv_pdf.test.js');
 
 async function main() {
   console.log('====================================================');
@@ -38,6 +39,7 @@ async function main() {
     { name: '7. Phase 2 Database Integration Tests', fn: runDatabasePhase2Tests },
     { name: '8. HTTP API Integration (End-to-End routes with SQLite)', fn: runApiIntegrationTests },
     { name: '9. Prompt-driven Job Search', fn: runJobSearchTests },
+    { name: '10. ATS CV export (PDF round trip)', fn: runCvPdfTests },
   ];
 
   for (const suite of suites) {

@@ -68,7 +68,7 @@ request against `main`. It uses a throwaway SQLite database
 3. **Type-check:** strict `tsc --noEmit`.
 4. **Repository tests:** `npx vitest run server/repositories/__tests__/sqlite.repositories.test.ts`
    (tenant isolation and DB constraints).
-5. **Integration tests:** `npm test` (auth, ownership, AI grounding, API, job search).
+5. **Integration tests:** `npm test` (auth, ownership, AI grounding, API, job search, and the ATS CV export: PDF rendered with Puppeteer and read back like an ATS). CI installs Chrome for Puppeteer first (`npx puppeteer browsers install chrome`).
    The suite always uses its own `sqlite.test.db`.
 6. **Production build:** `npm run build`, then a check that `server.js` was emitted.
 7. **Runtime gate:** boots the server and asserts that `GET /api/health` returns
